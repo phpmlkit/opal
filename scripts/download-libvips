@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+LIB_DIR="${PROJECT_ROOT}/lib"
+VERSION_FILE="${PROJECT_ROOT}/libvips-version"
+
+detect_platform() {
+  local os arch
+  case "$(uname -s)" in
+    Linux)  os="linux" ;;
+    Darwin) os="darwin" ;;
+    MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+    *) echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+  esac
+
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64|amd64) arch="x86_64" ;;
+    arm64|aarch64) arch="arm64" ;;
+    *) echo "Unsupported arch: $arch" >&2; exit 1 ;;
+  esac
+
+  if [ "$os" = "windows" ]; then
+    echo "windows-64"
+  else
+    echo "${os}-${arch}"
+  fi
+}
+
+PLATFORM="${1:-$(detect_platform)}"
+VERSION="${2:-$(cat "$VERSION_FILE" 2>/dev/null || echo "8.18.2")}"
+
+# Map platform names to libvips-binaries asset names
+case "$PLATFORM" in
+  darwin-arm64)   BINARIES_PLATFORM="darwin-arm64" ;;
+  darwin-x86_64)  BINARIES_PLATFORM="darwin-x64" ;;
+  linux-x86_64)   BINARIES_PLATFORM="linux-x64" ;;
+  linux-arm64)    BINARIES_PLATFORM="linux-arm64" ;;
+  windows-64)     BINARIES_PLATFORM="win-x64" ;;
+  *)              BINARIES_PLATFORM="$PLATFORM" ;;
+esac
+
+# Determine archive extension
+case "$PLATFORM" in
+  windows-*) EXT="zip" ;;
+  *) EXT="tar.gz" ;;
+esac
+
+# libvips-binaries release URL
+FILENAME="libvips-${BINARIES_PLATFORM}.${EXT}"
+URL="https://github.com/phpmlkit/libvips-binaries/releases/download/${VERSION}/${FILENAME}"
+TARGET_DIR="${LIB_DIR}/${PLATFORM}"
+
+echo "libvips download"
+echo "  Version:  ${VERSION}"
+echo "  Platform: ${PLATFORM}"
+echo "  URL:      ${URL}"
+echo "  Target:   ${TARGET_DIR}"
+
+# Skip if already present
+LIB_NAME=""
+case "$PLATFORM" in
+  darwin-*) LIB_NAME="libvips.*.dylib" ;;
+  linux-*)  LIB_NAME="libvips.so.*" ;;
+  windows-*) LIB_NAME="*.dll" ;;
+esac
+
+if [ -d "$TARGET_DIR" ] && ls "$TARGET_DIR"/$LIB_NAME 2>/dev/null >/dev/null; then
+  echo "  libvips already present for ${PLATFORM}, skipping"
+  exit 0
+fi
+
+# Download
+mkdir -p "$TARGET_DIR"
+TMPDIR=$(mktemp -d)
+
+if command -v curl >/dev/null; then
+  curl -sL --retry 3 --retry-max-time 30 -o "${TMPDIR}/archive.${EXT}" "$URL"
+elif command -v wget >/dev/null; then
+  wget -q --tries=3 --timeout=30 -O "${TMPDIR}/archive.${EXT}" "$URL"
+else
+  echo "Error: curl or wget required" >&2
+  exit 1
+fi
+
+# Extract
+case "$EXT" in
+  tar.gz) tar xzf "${TMPDIR}/archive.${EXT}" -C "$TMPDIR" ;;
+  zip)    unzip -q "${TMPDIR}/archive.${EXT}" -d "$TMPDIR" ;;
+esac
+
+# Copy lib directory
+if [ -d "$TMPDIR/lib" ]; then
+  cp -R "$TMPDIR/lib/"* "$TARGET_DIR/"
+else
+  find "$TMPDIR" -type f \( -name "*.dylib" -o -name "*.so*" -o -name "*.dll" \) -exec cp {} "$TARGET_DIR/" \;
+fi
+
+# Copy versions.json and third-party notices into the lib directory
+for f in versions.json THIRD-PARTY-NOTICES.md; do
+  found=$(find "$TMPDIR" -name "$f" -type f 2>/dev/null | head -1)
+  if [ -n "$found" ]; then
+    cp "$found" "$TARGET_DIR/"
+  fi
+done
+
+rm -rf "$TMPDIR"
+echo "  Done"

@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Package for ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-latest
+            archive_ext: tar.gz
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+            archive_ext: tar.gz
+          - platform: darwin-x86_64
+            runner: macos-15-intel
+            archive_ext: tar.gz
+          - platform: darwin-arm64
+            runner: macos-latest
+            archive_ext: tar.gz
+          - platform: windows-64
+            runner: windows-latest
+            archive_ext: zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download libvips binary
+        shell: bash
+        run: bash scripts/download-libvips '${{ matrix.platform }}'
+
+      - name: Create distribution package
+        shell: bash
+        run: bash scripts/package.sh '${{ matrix.platform }}'
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-${{ matrix.platform }}.${{ matrix.archive_ext }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Artifacts (workflow dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ matrix.platform }}
+          path: dist-${{ matrix.platform }}.*
+          retention-days: 7

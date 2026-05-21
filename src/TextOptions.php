@@ -1,0 +1,172 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PhpMlKit\Opal;
+
+/**
+ * Options controlling how text is rendered.
+ * Immutable — use with* methods to derive variants.
+ */
+final readonly class TextOptions
+{
+    public function __construct(
+        public ?string $font = null,
+        public ?string $fontFile = null,
+        public ?int $fontSize = null,
+        public ?int $width = null,
+        public ?int $height = null,
+        public ?string $align = null,
+        public ?bool $justify = null,
+        public ?int $dpi = null,
+        public ?bool $rgba = null,
+        public ?int $spacing = null,
+        public ?string $wrap = null,
+    ) {}
+
+    /**
+     * Default text options with a 12px font size.
+     */
+    public static function default(): self
+    {
+        return new self(null, null, 12);
+    }
+
+    /**
+     * Set the font family or Pango font description.
+     */
+    public function withFont(string $font): self
+    {
+        return new self($font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set a custom font file path (e.g. .ttf or .otf).
+     */
+    public function withFontFile(string $fontFile): self
+    {
+        return new self($this->font, $fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set the maximum text block width in pixels.
+     */
+    public function withWidth(int $width): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set the maximum text block height in pixels.
+     */
+    public function withHeight(int $height): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set alignment: "low" (left), "centre" (center), or "high" (right).
+     */
+    public function withAlign(string $align): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Enable or disable text justification.
+     */
+    public function withJustify(bool $justify): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set the font size in points (default 12).
+     */
+    public function withFontSize(int $fontSize): self
+    {
+        return new self($this->font, $this->fontFile, $fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set rendering DPI (default 72).
+     */
+    public function withDpi(int $dpi): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $dpi, $this->rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Enable RGBA rendering (for transparent backgrounds).
+     */
+    public function withRgba(bool $rgba = true): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $rgba, $this->spacing, $this->wrap);
+    }
+
+    /**
+     * Set line spacing in points.
+     */
+    public function withSpacing(int $spacing): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $spacing, $this->wrap);
+    }
+
+    /**
+     * Set text wrapping: "word", "char", "word-char", or "none".
+     */
+    public function withWrap(string $wrap): self
+    {
+        return new self($this->font, $this->fontFile, $this->fontSize, $this->width, $this->height, $this->align, $this->justify, $this->dpi, $this->rgba, $this->spacing, $wrap);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toVipsOptions(): array
+    {
+        $vipsOptions = [];
+
+        if (null !== $this->font) {
+            $vipsOptions['font'] = "{$this->font} {$this->fontSize}";
+        }
+
+        if (null !== $this->fontFile) {
+            $vipsOptions['fontfile'] = $this->fontFile;
+        }
+
+        if (null !== $this->width) {
+            $vipsOptions['width'] = $this->width;
+        }
+
+        if (null !== $this->height) {
+            $vipsOptions['height'] = $this->height;
+        }
+
+        if (null !== $this->align) {
+            $vipsOptions['align'] = $this->align;
+        }
+
+        if (null !== $this->justify) {
+            $vipsOptions['justify'] = $this->justify;
+        }
+
+        if (null !== $this->dpi) {
+            $vipsOptions['dpi'] = $this->dpi;
+        }
+
+        if (null !== $this->rgba) {
+            $vipsOptions['rgba'] = $this->rgba;
+        }
+
+        if (null !== $this->spacing) {
+            $vipsOptions['spacing'] = $this->spacing;
+        }
+
+        if (null !== $this->wrap) {
+            $vipsOptions['wrap'] = $this->wrap;
+        }
+
+        return $vipsOptions;
+    }
+}
