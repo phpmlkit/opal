@@ -1658,6 +1658,7 @@ final readonly class Image
 
             $ffi = \FFI::cdef();
             $buffer = $ffi->new("uint8_t[{$size}]");
+            assert($buffer instanceof \FFI\CData);
             \FFI::memcpy($buffer, $bufferString, $size);
 
             $nd = NDArray::fromBuffer($buffer, $shape, $dtype);
@@ -1687,6 +1688,7 @@ final readonly class Image
             $bufferString = $this->vipsImage->writeToMemory();
             $size = \strlen($bufferString);
             $buffer = $ffi->new("uint8_t[{$size}]");
+            assert($buffer instanceof \FFI\CData);
             \FFI::memcpy($buffer, $bufferString, $size);
 
             return $buffer;

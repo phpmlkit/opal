@@ -110,7 +110,7 @@ class ImageArrayTest extends TestCase
     public function testFromArrayRejects1D(): void
     {
         $this->expectException(ShapeException::class);
-        // @phpstan-ignore argument.type intentionally invalid input
+        /** @phpstan-ignore-next-line intentionally invalid 1D input */
         Image::fromArray([1, 2, 3]);
     }
 
