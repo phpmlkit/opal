@@ -16,7 +16,7 @@ $platformDirectories = [
     'linux-arm64' => 'linux-arm64',
     'darwin-arm64' => 'darwin-arm64',
     'darwin-x86_64' => 'darwin-x86_64',
-    'windows-x64' => 'windows-x64',
+    'windows-64' => 'windows-64',
 ];
 
 $platformDirectory = Platform::findBestMatch($platformDirectories);
