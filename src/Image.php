@@ -57,7 +57,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new InvalidImageException("Failed to load image from file: {$path}", 0, $e);
+            throw InvalidImageException::wrap("Failed to load image from file: {$path}", $e);
         }
     }
 
@@ -80,7 +80,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new InvalidImageException('Failed to load image from buffer', 0, $e);
+            throw InvalidImageException::wrap('Failed to load image from buffer', $e);
         }
     }
 
@@ -115,7 +115,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new InvalidImageException('Failed to create image from memory', 0, $e);
+            throw InvalidImageException::wrap('Failed to create image from memory', $e);
         }
     }
 
@@ -206,7 +206,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new InvalidImageException('Failed to create blank image', 0, $e);
+            throw InvalidImageException::wrap('Failed to create blank image', $e);
         }
     }
 
@@ -227,7 +227,7 @@ final readonly class Image
         try {
             return new self(VipsImage::text($text, $options->toVipsOptions()));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to create text image', 0, $e);
+            throw ImageException::wrap('Failed to create text image', $e);
         }
     }
 
@@ -275,7 +275,7 @@ final readonly class Image
 
             return new self(VipsImage::thumbnail($filename, $width, $options));
         } catch (\Exception $e) {
-            throw new InvalidImageException("Failed to create thumbnail from file: {$filename}", 0, $e);
+            throw InvalidImageException::wrap("Failed to create thumbnail from file: {$filename}", $e);
         }
     }
 
@@ -425,7 +425,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to convert color space', 0, $e);
+            throw ImageException::wrap('Failed to convert color space', $e);
         }
     }
 
@@ -486,7 +486,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to add alpha channel', 0, $e);
+            throw ImageException::wrap('Failed to add alpha channel', $e);
         }
     }
 
@@ -511,7 +511,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to flatten alpha', 0, $e);
+            throw ImageException::wrap('Failed to flatten alpha', $e);
         }
     }
 
@@ -533,7 +533,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to remove alpha', 0, $e);
+            throw ImageException::wrap('Failed to remove alpha', $e);
         }
     }
 
@@ -558,7 +558,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to premultiply alpha', 0, $e);
+            throw ImageException::wrap('Failed to premultiply alpha', $e);
         }
     }
 
@@ -583,7 +583,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to unpremultiply alpha', 0, $e);
+            throw ImageException::wrap('Failed to unpremultiply alpha', $e);
         }
     }
 
@@ -617,7 +617,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to resize image', 0, $e);
+            throw ImageException::wrap('Failed to resize image', $e);
         }
     }
 
@@ -682,7 +682,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to scale image', 0, $e);
+            throw ImageException::wrap('Failed to scale image', $e);
         }
     }
 
@@ -718,7 +718,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to crop image', 0, $e);
+            throw ImageException::wrap('Failed to crop image', $e);
         }
     }
 
@@ -828,7 +828,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to pad image', 0, $e);
+            throw ImageException::wrap('Failed to pad image', $e);
         }
     }
 
@@ -891,7 +891,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to flip image', 0, $e);
+            throw ImageException::wrap('Failed to flip image', $e);
         }
     }
 
@@ -916,7 +916,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to rotate image', 0, $e);
+            throw ImageException::wrap('Failed to rotate image', $e);
         }
     }
 
@@ -932,7 +932,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->rot(Angle::D90));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to rotate image', 0, $e);
+            throw ImageException::wrap('Failed to rotate image', $e);
         }
     }
 
@@ -948,7 +948,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->rot(Angle::D180));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to rotate image', 0, $e);
+            throw ImageException::wrap('Failed to rotate image', $e);
         }
     }
 
@@ -964,7 +964,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->rot(Angle::D270));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to rotate image', 0, $e);
+            throw ImageException::wrap('Failed to rotate image', $e);
         }
     }
 
@@ -980,7 +980,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->autorot());
         } catch (\Exception $e) {
-            throw new ImageException('Failed to auto-rotate image', 0, $e);
+            throw ImageException::wrap('Failed to auto-rotate image', $e);
         }
     }
 
@@ -1002,7 +1002,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->cast($format->toString()));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to cast band format', 0, $e);
+            throw ImageException::wrap('Failed to cast band format', $e);
         }
     }
 
@@ -1077,7 +1077,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to normalize image', 0, $e);
+            throw ImageException::wrap('Failed to normalize image', $e);
         }
     }
 
@@ -1106,7 +1106,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to adjust brightness', 0, $e);
+            throw ImageException::wrap('Failed to adjust brightness', $e);
         }
     }
 
@@ -1131,7 +1131,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to adjust contrast', 0, $e);
+            throw ImageException::wrap('Failed to adjust contrast', $e);
         }
     }
 
@@ -1168,7 +1168,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to apply linear transformation', 0, $e);
+            throw ImageException::wrap('Failed to apply linear transformation', $e);
         }
     }
 
@@ -1195,7 +1195,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to adjust saturation', 0, $e);
+            throw ImageException::wrap('Failed to adjust saturation', $e);
         }
     }
 
@@ -1220,7 +1220,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to adjust hue', 0, $e);
+            throw ImageException::wrap('Failed to adjust hue', $e);
         }
     }
 
@@ -1244,7 +1244,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->gamma(['exponent' => $gamma]));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to apply gamma correction', 0, $e);
+            throw ImageException::wrap('Failed to apply gamma correction', $e);
         }
     }
 
@@ -1278,7 +1278,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to sharpen image', 0, $e);
+            throw ImageException::wrap('Failed to sharpen image', $e);
         }
     }
 
@@ -1299,7 +1299,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->gaussblur($sigma));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to blur image', 0, $e);
+            throw ImageException::wrap('Failed to blur image', $e);
         }
     }
 
@@ -1320,7 +1320,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->median($size));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to apply median blur', 0, $e);
+            throw ImageException::wrap('Failed to apply median blur', $e);
         }
     }
 
@@ -1339,7 +1339,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->invert());
         } catch (\Exception $e) {
-            throw new ImageException('Failed to invert image', 0, $e);
+            throw ImageException::wrap('Failed to invert image', $e);
         }
     }
 
@@ -1366,7 +1366,7 @@ final readonly class Image
         try {
             return new self($this->vipsImage->extract_band($index));
         } catch (\Exception $e) {
-            throw new ImageException('Failed to get band', 0, $e);
+            throw ImageException::wrap('Failed to get band', $e);
         }
     }
 
@@ -1382,7 +1382,7 @@ final readonly class Image
 
             return array_map(static fn ($band) => new self($band), $bands);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to split bands', 0, $e);
+            throw ImageException::wrap('Failed to split bands', $e);
         }
     }
 
@@ -1415,7 +1415,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to merge bands', 0, $e);
+            throw ImageException::wrap('Failed to merge bands', $e);
         }
     }
 
@@ -1447,7 +1447,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to reorder bands', 0, $e);
+            throw ImageException::wrap('Failed to reorder bands', $e);
         }
     }
 
@@ -1483,7 +1483,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to composite images', 0, $e);
+            throw ImageException::wrap('Failed to composite images', $e);
         }
     }
 
@@ -1513,7 +1513,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to draw rectangle', 0, $e);
+            throw ImageException::wrap('Failed to draw rectangle', $e);
         }
     }
 
@@ -1543,7 +1543,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to draw circle', 0, $e);
+            throw ImageException::wrap('Failed to draw circle', $e);
         }
     }
 
@@ -1567,7 +1567,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to draw line', 0, $e);
+            throw ImageException::wrap('Failed to draw line', $e);
         }
     }
 
@@ -1596,7 +1596,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to draw mask', 0, $e);
+            throw ImageException::wrap('Failed to draw mask', $e);
         }
     }
 
@@ -1624,7 +1624,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to draw text', 0, $e);
+            throw ImageException::wrap('Failed to draw text', $e);
         }
     }
 
@@ -1665,7 +1665,7 @@ final readonly class Image
 
             return ChannelFormat::CHW === $channelFormat ? $nd->permute(2, 0, 1) : $nd;
         } catch (\Exception $e) {
-            throw new ImageException('Failed to export to NDArray', 0, $e);
+            throw ImageException::wrap('Failed to export to NDArray', $e);
         }
     }
 
@@ -1693,7 +1693,7 @@ final readonly class Image
 
             return $buffer;
         } catch (\Exception $e) {
-            throw new ImageException('Failed to export to memory', 0, $e);
+            throw ImageException::wrap('Failed to export to memory', $e);
         }
     }
 
@@ -1715,7 +1715,7 @@ final readonly class Image
         try {
             $this->vipsImage->writeToFile($path, $vipsOptions);
         } catch (\Exception $e) {
-            throw new ImageException("Failed to write image to {$path}", 0, $e);
+            throw ImageException::wrap("Failed to write image to {$path}", $e);
         }
     }
 
@@ -1738,7 +1738,7 @@ final readonly class Image
         try {
             return $this->vipsImage->writeToBuffer($format->suffix(), $vipsOptions);
         } catch (\Exception $e) {
-            throw new ImageException("Failed to encode image to {$format->value}", 0, $e);
+            throw ImageException::wrap("Failed to encode image to {$format->value}", $e);
         }
     }
 
@@ -1760,7 +1760,7 @@ final readonly class Image
 
             return new self($vipsImage);
         } catch (\Exception $e) {
-            throw new ImageException('Failed to copy image', 0, $e);
+            throw ImageException::wrap('Failed to copy image', $e);
         }
     }
 }
