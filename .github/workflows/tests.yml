@@ -54,17 +54,40 @@ jobs:
           echo ""
           echo "=== Direct FFI load attempt ==="
           php -r '
+            $paths = [
+              "lib/windows-64/libvips-42.dll",
+              "lib\\windows-64\\libvips-42.dll",
+              __DIR__ . "/lib/windows-64/libvips-42.dll",
+              __DIR__ . "\\lib\\windows-64\\libvips-42.dll",
+            ];
+            foreach ($paths as $label => $dll) {
+              echo "trying: " . $dll . "\n";
+              echo "  exists: " . (file_exists($dll) ? "yes" : "no") . "\n";
+              echo "  realpath: " . (realpath($dll) ?: "false") . "\n";
+              try {
+                $vips = \FFI::cdef(
+                  "int vips_init (const char *argv0);",
+                  $dll
+                );
+                echo "  FFI::cdef: OK\n";
+                $result = $vips->vips_init("");
+                echo "  vips_init: " . $result . "\n";
+              } catch (\Throwable $e) {
+                echo "  " . get_class($e) . ": " . $e->getMessage() . "\n";
+              }
+            }
+            echo "\n--- With PATH prepended ---\n";
+            $libDir = __DIR__ . "\\lib\\windows-64";
+            $oldPath = getenv("PATH");
+            putenv("PATH=" . $libDir . ";" . $oldPath);
             try {
               $vips = \FFI::cdef(
                 "int vips_init (const char *argv0);",
-                "lib/windows-64/libvips-42.dll"
+                $libDir . "\\libvips-42.dll"
               );
-              echo "FFI::cdef: OK\n";
-              $result = $vips->vips_init("");
-              echo "vips_init: " . $result . "\n";
+              echo "FFI::cdef (with PATH): OK\n";
             } catch (\Throwable $e) {
               echo get_class($e) . ": " . $e->getMessage() . "\n";
-              echo "in " . $e->getFile() . ":" . $e->getLine() . "\n";
             }
           ' 2>&1 || echo "FFI load command failed"
 
