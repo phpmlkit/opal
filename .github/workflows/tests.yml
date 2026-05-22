@@ -29,6 +29,45 @@ jobs:
       - name: Install dependencies
         uses: ramsey/composer-install@v4
 
+      - name: Debug libvips path (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "=== lib/ directory tree ==="
+          find lib/ -type f 2>/dev/null || echo "(no lib directory)"
+          echo ""
+          echo "=== lib/windows-64/ directory tree ==="
+          find lib/windows-64/ -type f 2>/dev/null || echo "(no lib/windows-64 directory)"
+          echo ""
+          echo "=== PHP info ==="
+          php -r '
+            $dll = "lib/windows-64/libvips-42.dll";
+            echo "dll path: " . $dll . "\n";
+            echo "realpath: " . (realpath($dll) ?: "false") . "\n";
+            echo "file_exists: " . (file_exists($dll) ? "yes" : "no") . "\n";
+            echo "PHP_INT_SIZE: " . PHP_INT_SIZE . " (".(PHP_INT_SIZE === 8 ? "64-bit" : "32-bit").")\n";
+            echo "ffi loaded: " . (extension_loaded("ffi") ? "yes" : "no") . "\n";
+            echo "ffi.enable: " . (ini_get("ffi.enable") ?: "(not set)") . "\n";
+            echo "PHP_OS_FAMILY: " . PHP_OS_FAMILY . "\n";
+            echo "PHP_VERSION: " . PHP_VERSION . "\n";
+          '
+          echo ""
+          echo "=== Direct FFI load attempt ==="
+          php -r '
+            try {
+              $vips = \FFI::cdef(
+                "int vips_init (const char *argv0);",
+                "lib/windows-64/libvips-42.dll"
+              );
+              echo "FFI::cdef: OK\n";
+              $result = $vips->vips_init("");
+              echo "vips_init: " . $result . "\n";
+            } catch (\Throwable $e) {
+              echo get_class($e) . ": " . $e->getMessage() . "\n";
+              echo "in " . $e->getFile() . ":" . $e->getLine() . "\n";
+            }
+          ' 2>&1 || echo "FFI load command failed"
+
       - name: Run tests
         run: composer test:pretty
 
