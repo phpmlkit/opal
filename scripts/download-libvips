@@ -124,6 +124,10 @@ main() {
     zip)    unzip -q "${tmpdir}/archive.${ext}" -d "$tmpdir" ;;
   esac
 
+  # DEBUG: show extracted files (remove once Windows CI is confirmed working)
+  print_detail "Contents of tmpdir after extraction:"
+  find "${tmpdir}" -type f | head -50 | sed 's/^/    /' || true
+
   if [ -d "$tmpdir/lib" ]; then
     cp -R "$tmpdir/lib/"* "$target_dir/"
   else
