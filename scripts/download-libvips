@@ -93,6 +93,11 @@ main() {
 
   if [ -d "$target_dir" ] && ls "$target_dir"/$lib_name 2>/dev/null >/dev/null; then
     echo -e "${GREEN}Libvips already installed for ${YELLOW}${platform}${NC}"
+
+    # DEBUG: show installed files (remove once Windows CI is confirmed working)
+    print_detail "Contents of ${target_dir}:"
+    find "${target_dir}" -type f | sed 's/^/    /' || true
+
     return 0
   fi
 
@@ -134,6 +139,12 @@ main() {
   done
 
   print_heading "Installed libvips to lib/${platform}"
+
+  # DEBUG: show what was installed (remove once Windows CI is confirmed working)
+  print_detail "Contents of lib/:"
+  find "${LIB_DIR}" -type f | sed 's/^/    /' || true
+  print_detail "Contents of ${target_dir}:"
+  find "${target_dir}" -type f | sed 's/^/    /' || true
 }
 
 main "$@"
