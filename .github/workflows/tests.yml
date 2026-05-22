@@ -54,38 +54,59 @@ jobs:
           echo ""
           echo "=== Direct FFI load attempt ==="
           php -r '
-            $paths = [
-              "lib/windows-64/libvips-42.dll",
-              "lib\\windows-64\\libvips-42.dll",
-              __DIR__ . "/lib/windows-64/libvips-42.dll",
-              __DIR__ . "\\lib\\windows-64\\libvips-42.dll",
-            ];
-            foreach ($paths as $label => $dll) {
-              echo "trying: " . $dll . "\n";
-              echo "  exists: " . (file_exists($dll) ? "yes" : "no") . "\n";
-              echo "  realpath: " . (realpath($dll) ?: "false") . "\n";
-              try {
-                $vips = \FFI::cdef(
-                  "int vips_init (const char *argv0);",
-                  $dll
-                );
-                echo "  FFI::cdef: OK\n";
-                $result = $vips->vips_init("");
-                echo "  vips_init: " . $result . "\n";
-              } catch (\Throwable $e) {
-                echo "  " . get_class($e) . ": " . $e->getMessage() . "\n";
-              }
-            }
-            echo "\n--- With PATH prepended ---\n";
+            $dll = __DIR__ . "\\lib\\windows-64\\libvips-42.dll";
             $libDir = __DIR__ . "\\lib\\windows-64";
-            $oldPath = getenv("PATH");
-            putenv("PATH=" . $libDir . ";" . $oldPath);
+            echo "DLL: $dll\n";
+            echo "Lib dir: $libDir\n";
+
+            // 1. Plain direct load
+            echo "\n--- 1. Plain direct load ---\n";
             try {
-              $vips = \FFI::cdef(
-                "int vips_init (const char *argv0);",
-                $libDir . "\\libvips-42.dll"
+              $vips = \FFI::cdef("int vips_init (const char *argv0);", $dll);
+              echo "OK\n";
+            } catch (\Throwable $e) {
+              echo get_class($e) . ": " . $e->getMessage() . "\n";
+            }
+
+            // 2. SetDllDirectoryA
+            echo "\n--- 2. SetDllDirectoryA ---\n";
+            try {
+              $k32 = \FFI::cdef(
+                "int SetDllDirectoryA(const char* lpPathName);",
+                "kernel32.dll"
               );
-              echo "FFI::cdef (with PATH): OK\n";
+              $k32->SetDllDirectoryA($libDir);
+              $vips = \FFI::cdef("int vips_init (const char *argv0);", $dll);
+              echo "OK\n";
+              $k32->SetDllDirectoryA(null);
+            } catch (\Throwable $e) {
+              echo get_class($e) . ": " . $e->getMessage() . "\n";
+            }
+
+            // 3. AddDllDirectory
+            echo "\n--- 3. AddDllDirectory ---\n";
+            try {
+              $k32 = \FFI::cdef(
+                "int SetDefaultDllDirectories(unsigned long DirectoryFlags); void* AddDllDirectory(const wchar_t* NewDirectory); int RemoveDllDirectory(void* Cookie);",
+                "kernel32.dll"
+              );
+              $k32->SetDefaultDllDirectories(0x1000); // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+              $wide = mb_convert_encoding($libDir . "\0", "UTF-16LE", "UTF-8");
+              $cookie = $k32->AddDllDirectory($wide);
+              $vips = \FFI::cdef("int vips_init (const char *argv0);", $dll);
+              echo "OK\n";
+              $k32->RemoveDllDirectory($cookie);
+            } catch (\Throwable $e) {
+              echo get_class($e) . ": " . $e->getMessage() . "\n";
+            }
+
+            // 4. putenv PATH (known working, for comparison)
+            echo "\n--- 4. putenv PATH ---\n";
+            try {
+              $old = getenv("PATH");
+              putenv("PATH=" . $libDir . ";" . $old);
+              $vips = \FFI::cdef("int vips_init (const char *argv0);", $dll);
+              echo "OK\n";
             } catch (\Throwable $e) {
               echo get_class($e) . ": " . $e->getMessage() . "\n";
             }
