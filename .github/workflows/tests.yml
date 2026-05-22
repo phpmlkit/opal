@@ -87,7 +87,7 @@ jobs:
             echo "\n--- 3. AddDllDirectory ---\n";
             try {
               $k32 = \FFI::cdef(
-                "int SetDefaultDllDirectories(unsigned long DirectoryFlags); void* AddDllDirectory(const wchar_t* NewDirectory); int RemoveDllDirectory(void* Cookie);",
+                "typedef unsigned short wchar_t; int SetDefaultDllDirectories(unsigned long DirectoryFlags); void* AddDllDirectory(const wchar_t* NewDirectory); int RemoveDllDirectory(void* Cookie);",
                 "kernel32.dll"
               );
               $k32->SetDefaultDllDirectories(0x1000); // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
