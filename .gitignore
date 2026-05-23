@@ -16,7 +16,8 @@
 .DS_Store
 Thumbs.db
 
-benchmarks/
+benchmarks/output/
+benchmarks/images/
 examples/
 
 # Vitepress

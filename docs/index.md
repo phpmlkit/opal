@@ -71,19 +71,27 @@ $array = $result->toArray(ChannelFormat::CHW);
 
 ### Performance That Matters
 
-PHP image processing has traditionally meant GD (slow, limited) or Imagick (heavy, memory-hungry). Opal changes that with libvips — a C library that's faster than both while using significantly less memory.
+PHP image processing has traditionally meant GD (slow, limited) or Imagick (heavy, memory-hungry). Opal changes that
+with libvips — a C library that's consistently **3–10× faster** than GD and **10–55× faster** than Imagick in real-world
+pipelines.
 
-```
-Operation              GD       Imagick   Opal (libvips)
-────────────────────────────────────────────────────────
-Load + resize JPEG    3.2 ms   2.8 ms    0.5 ms
-Rotate 45°           12.1 ms   8.4 ms    1.8 ms
-Sharpen                9.5 ms   7.2 ms    5.2 ms
-```
+Benchmarks below run the full pipeline — **load JPEG → resize → rotate 45° → sharpen** — testing each library on four
+image sizes (lower is better).
+
+| Image       | GD        | Imagick     | Opal         |
+|-------------|-----------|-------------|--------------|
+| 640×480     | 8.48 ms   | 128.55 ms   | **1.56 ms**  |
+| 1920×1080   | 49.67 ms  | 721.97 ms   | **5.36 ms**  |
+| 4000×2670   | 152.74 ms | 2,039.15 ms | **15.47 ms** |
+| 6000×4000   | 299.43 ms | 3,538.47 ms | **33.17 ms** |
+
+> *Apple M1, macOS. 5–30 iterations per cell. Run: `php benchmarks/opal-vs-gd-vs-imagick.php`*
 
 ### Lazy Pipelines
 
-Every transform appends a node to an internal VIPS pipeline. No pixels are decoded or processed until a terminal method — `toFile()`, `toBuffer()`, `toArray()`, or `toMemory()` — triggers evaluation. The pipeline is automatically reordered and fused for optimal performance.
+Every transform appends a node to an internal VIPS pipeline. No pixels are decoded or processed until a terminal
+method — `toFile()`, `toBuffer()`, `toArray()`, or `toMemory()` — triggers evaluation. The pipeline is automatically
+reordered and fused for optimal performance.
 
 ```php
 // Nothing happens here — just building a pipeline graph

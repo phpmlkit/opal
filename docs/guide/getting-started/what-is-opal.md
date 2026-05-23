@@ -4,57 +4,60 @@ title: What is phpmlkit/opal?
 
 # What is phpmlkit/opal?
 
-phpmlkit/opal is a high-performance image processing library for PHP. It wraps [libvips](https://www.libvips.org) — a fast, memory-efficient C library — through PHP's FFI extension, exposing a clean, type-safe, immutable API.
+phpmlkit/opal is a high-performance image processing library for PHP. It's an alternative to GD and Imagick — faster,
+more memory-efficient, and designed for modern workflows.
 
-## Why another image library?
+```php
+use PhpMlKit\Opal\Image;
 
-Existing PHP image libraries fall into three categories, none of which are ideal for modern ML and programmatic workflows:
-
-- **GD** — bundled with PHP but slow, limited format support, no alpha compositing, no color management.
-- **Imagick** — wraps ImageMagick. Feature-rich but memory-hungry and significantly slower than libvips for bulk operations.
-- **Raw jcupitt/vips** — the PHP bindings for libvips are powerful but expose a low-level, procedural API that maps directly to the C interface.
-
-phpmlkit/opal sits above jcupitt/vips and provides:
-
-- **Immutable operations** — every transform returns a new `Image`. No side effects, no mutation.
-- **Lazy evaluation** — VIPS pipelines are queued and optimized; execution happens only when data is consumed.
-- **NDArray interop** — convert images to and from [phpmlkit/ndarray](https://github.com/phpmlkit/ndarray) for ML pipelines.
-- **Type-safe API** — enums, value objects, and full PHP 8.2+ type annotations.
-- **Drawing helpers** — rects, circles, text, compositing. No separate graphics library.
-
-## Relationship with libvips
-
-The library does **not** replace libvips. It wraps it.
-
-```
-┌─────────────────────────────┐
-│     phpmlkit/opal          │  ← Immutable, lazy, typed API
-├─────────────────────────────┤
-│     jcupitt/vips (PHP FFI)  │  ← Low-level FFI bindings
-├─────────────────────────────┤
-│     libvips (C library)     │  ← Image processing engine
-└─────────────────────────────┘
+$img = Image::fromFile('photo.jpg')
+    ->resize(1200, 800)
+    ->sharpen()
+    ->toFile('output.jpg');
 ```
 
-libvips is one of the fastest image processing libraries available. It processes only the pixel regions needed for the final output, keeps intermediate results small, and can pipeline operations without allocating temporary buffers. phpmlkit/opal preserves these characteristics while providing a developer-friendly interface.
+## Why Opal?
 
-## When to use phpmlkit/opal
+GD is limited and slow. Imagick is powerful but memory-hungry. Opal is built on [libvips](https://www.libvips.org) — a C
+engine that processes images faster than both while using a fraction of the memory.
 
-You should use this library when you need to:
+**Load → resize → rotate 45° → sharpen** (full pipeline):
 
-- **Process images programmatically** — resize, crop, rotate, filter, convert color spaces.
-- **Build ML preprocessing pipelines** — resize → normalize → export NDArray for inference.
-- **Annotate images** — draw bounding boxes, labels, heatmaps for object detection or segmentation visualisation.
-- **Generate thumbnails at scale** — libvips shrink-on-load is significantly faster than load-then-resize.
-- **Compose images** — overlay graphics, watermarks, text with blend modes.
-- **Convert between formats** — JPEG ↔ PNG ↔ WebP ↔ AVIF with quality control.
+| Image       | GD        | Imagick     | Opal         |
+|-------------|-----------|-------------|--------------|
+| 640×480     | 8.48 ms   | 128.55 ms   | **1.56 ms**  |
+| 1920×1080   | 49.67 ms  | 721.97 ms   | **5.36 ms**  |
+| 4000×2670   | 152.74 ms | 2,039.15 ms | **15.47 ms** |
+| 6000×4000   | 299.43 ms | 3,538.47 ms | **33.17 ms** |
 
-## When to use raw libvips
+> *Apple M1, macOS. 5–30 iterations per cell. Run: `php benchmarks/opal-vs-gd-vs-imagick.php`*
 
-You might prefer the raw jcupitt/vips bindings when you need:
+Opal is **5–10× faster than GD** and **50–105× faster than Imagick**.
 
-- **Direct access to libvips operations** not yet exposed by phpmlkit/opal.
-- **Custom VIPS pipelines** built dynamically with the low-level API.
-- **Maximum control over VIPS configuration** — cache settings, concurrency, memory limits.
+## What you get
 
-In those cases you can still use phpmlkit/opal alongside raw vips code. The `Image` class is a thin wrapper; you can access the underlying `VipsImage` via the public `$vipsImage` property if needed.
+- **Immutable API** — every transform returns a new `Image`. No mutation, no surprises.
+- **Lazy pipelines** — build a chain of operations; nothing executes until you save or export. VIPS fuses and optimises
+  the pipeline automatically.
+- **Full format support** — JPEG, PNG, WebP, AVIF, TIFF, HEIF, BMP, GIF. Load from files, buffers, or raw memory.
+- **Drawing & compositing** — rectangles, circles, text, image overlays with blend modes. No separate graphics library
+  needed.
+- **ML-ready** — export images as NDArrays for PyTorch (CHW) or TensorFlow (HWC) format. Preprocessing pipelines compose
+  directly with [phpmlkit/ndarray](https://github.com/phpmlkit/ndarray).
+- **Type-safe** — PHP 8.2+ with strict types, enums, and immutable value objects throughout.
+
+## When to use it
+
+- Resizing, cropping, rotating, filtering, and colour conversions
+- ML preprocessing — resize → normalize → tensor export
+- Thumbnail generation at scale (libvips shrink-on-load)
+- Drawing annotations — bounding boxes, labels, heatmaps
+- Compositing — overlays, watermarks, text with blend modes
+- Format conversion with quality control
+
+## Requirements
+
+- PHP 8.2+
+- `ext-ffi`
+
+Everything else — including the libvips binary — is installed automatically by Composer.
