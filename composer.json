@@ -52,7 +52,7 @@
         "test:coverage": "./vendor/bin/phpunit --coverage-text",
         "cs:fix": "./vendor/bin/php-cs-fixer fix",
         "cs:check": "./vendor/bin/php-cs-fixer fix --dry-run --diff",
-        "lint": "./vendor/bin/phpstan analyse src --level=8"
+        "lint": "./vendor/bin/phpstan analyse"
     },
     "config": {
         "sort-packages": true,
