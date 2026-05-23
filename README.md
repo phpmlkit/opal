@@ -4,7 +4,7 @@
 
 <h1 align="center">Opal</h1>
 
-<p align="center">High-performance image processing for PHP, backed by libvips via FFI</p>
+<p align="center">High-performance image processing for PHP, backed by libvips</p>
 
 <p align="center">
   <a href="https://packagist.org/packages/phpmlkit/opal"><img src="https://img.shields.io/packagist/v/phpmlkit/opal?style=flat-square" alt="Latest Version"></a>
