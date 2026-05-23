@@ -87,8 +87,8 @@ jobs:
             echo "\n--- 3. AddDllDirectory ---\n";
             try {
               $msvcrt = \FFI::cdef(
-                'size_t mbstowcs(void *wcstr, const char *mbstr, size_t count);',
-                'msvcrt.dll'
+                "size_t mbstowcs(void *wcstr, const char *mbstr, size_t count);",
+                "msvcrt.dll"
               );
               $k32 = \FFI::cdef(
                 "int SetDefaultDllDirectories(unsigned long DirectoryFlags); void* AddDllDirectory(const void* NewDirectory); int RemoveDllDirectory(void* Cookie);",
@@ -96,7 +96,7 @@ jobs:
               );
               $k32->SetDefaultDllDirectories(0x1000); // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
               $pathLen = strlen($libDir);
-              $wide = $msvcrt->new('char[' . ($pathLen * 2 + 2) . ']');
+              $wide = $msvcrt->new("char[" . ($pathLen * 2 + 2) . "]");
               $ret = (int) $msvcrt->mbstowcs($wide, $libDir, $pathLen + 1);
               if ($ret === 0 && $pathLen > 0) {
                 throw new \Exception("mbstowcs conversion failed (returned 0)");
