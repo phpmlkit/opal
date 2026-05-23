@@ -1398,15 +1398,12 @@ final readonly class Image
      */
     public static function merge(array $bands): self
     {
-        if (empty($bands)) {
+        if ([] === $bands) {
             throw new \InvalidArgumentException('Bands array cannot be empty');
         }
 
         $bandImages = [];
         foreach ($bands as $band) {
-            if (!$band instanceof self) {
-                throw new \InvalidArgumentException('All bands must be Image instances');
-            }
             $bandImages[] = $band->vipsImage;
         }
 
@@ -1509,7 +1506,7 @@ final readonly class Image
                 $options['fill'] = true;
             }
 
-            $vipsImage = $this->vipsImage->draw_rect($color->toArray(), $left, $top, $width, $height, $options);
+            $vipsImage = $this->vipsImage->draw_rect($color->toFloatArray(), $left, $top, $width, $height, $options);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1538,8 +1535,7 @@ final readonly class Image
                 $options['fill'] = true;
             }
 
-            $ink = $color->toArray();
-            $vipsImage = $this->vipsImage->draw_circle($ink, $cx, $cy, $radius, $options);
+            $vipsImage = $this->vipsImage->draw_circle($color->toFloatArray(), $cx, $cy, $radius, $options);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1563,7 +1559,7 @@ final readonly class Image
     public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color): self
     {
         try {
-            $vipsImage = $this->vipsImage->draw_line($color->toArray(), $x1, $y1, $x2, $y2);
+            $vipsImage = $this->vipsImage->draw_line($color->toFloatArray(), $x1, $y1, $x2, $y2);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1592,7 +1588,7 @@ final readonly class Image
     public function drawMask(self $mask, int $x, int $y, Color $color): self
     {
         try {
-            $vipsImage = $this->vipsImage->draw_mask($color->toArray(), $mask->vipsImage, $x, $y);
+            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray(), $mask->vipsImage, $x, $y);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1620,7 +1616,7 @@ final readonly class Image
 
             $textImage = VipsImage::text($text, $options->toVipsOptions());
 
-            $vipsImage = $this->vipsImage->draw_mask($color->toArray(), $textImage, $x, $y);
+            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray(), $textImage, $x, $y);
 
             return new self($vipsImage);
         } catch (\Exception $e) {

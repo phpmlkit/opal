@@ -180,6 +180,14 @@ final readonly class Color
     }
 
     /**
+     * @return list<float> Float values for libvips draw operations
+     */
+    public function toFloatArray(): array
+    {
+        return array_map('floatval', $this->toArray());
+    }
+
+    /**
      * Get the hex string representation.
      *
      * @return string e.g. "#ff0000" or "#ff000080" if alpha < 255

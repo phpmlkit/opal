@@ -64,13 +64,6 @@ class ImageBandTest extends TestCase
         Image::merge([]);
     }
 
-    public function testMergeInvalidElementThrows(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        // @phpstan-ignore-next-line intentionally invalid type
-        Image::merge(['not-an-image']);
-    }
-
     public function testReorder(): void
     {
         $image = Image::blank(10, 10);

@@ -16,9 +16,25 @@
         "jcupitt/vips": "^2.0",
         "phpmlkit/ndarray": "^2.0"
     },
+    "keywords": [
+        "image",
+        "image processing",
+        "libvips",
+        "vips",
+        "ffi",
+        "ml",
+        "machine learning",
+        "ndarray",
+        "gd",
+        "imagick"
+    ],
+    "support": {
+        "issues": "https://github.com/phpmlkit/opal/issues",
+        "source": "https://github.com/phpmlkit/opal"
+    },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
-        "phpstan/phpstan": "^1.10",
+        "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "symfony/var-dumper": "^6.4.11|^7.1.5|^8.0"
     },
