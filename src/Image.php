@@ -111,7 +111,7 @@ final readonly class Image
 
         try {
             $vipsImage = VipsImageFactory::newFromMemory($buffer, $width, $height, $bands, $bandFormat);
-            $vipsImage->set('interpretation', $vipsInterpretation);
+            $vipsImage = $vipsImage->copy(['interpretation' => $vipsInterpretation]);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -202,7 +202,7 @@ final readonly class Image
                 $vipsImage = $vipsImage->newFromImage($background->toArray($bands));
             }
 
-            $vipsImage->set('interpretation', $colorSpace->toVipsInterpretation());
+            $vipsImage = $vipsImage->copy(['interpretation' => $colorSpace->toVipsInterpretation()]);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -410,79 +410,196 @@ final readonly class Image
     // -------------------------------------------------------------------------
 
     /**
-     * Convert the image to a different color space.
+     * Convert the image to sRGB color space.
      *
-     * @param ColorSpace $colorSpace Target color space to convert to
+     * Always returns a 3-band image: alpha (if present) is dropped, and pixels
+     * are converted from the source interpretation. Idempotent if the image is
+     * already a 3-band sRGB image.
      *
-     * @return self New Image instance with converted color space
+     * @return self New 3-band sRGB Image instance
      *
-     * @throws ImageException If the color space conversion fails
-     */
-    public function toColorSpace(ColorSpace $colorSpace): self
-    {
-        try {
-            $vipsImage = $this->vipsImage->colourspace($colorSpace->toVipsInterpretation());
-
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to convert color space', $e);
-        }
-    }
-
-    /**
-     * Convert the image to RGB color space.
-     *
-     * @return self New Image instance in RGB color space
-     *
-     * @throws ImageException If the color space conversion fails
+     * @throws ImageException If the conversion fails
      */
     public function toRGB(): self
     {
-        return $this->toColorSpace(ColorSpace::RGB);
-    }
+        if (3 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::RGB === $this->colorSpace()
+        ) {
+            return $this;
+        }
 
-    /**
-     * Convert the image to BGR color space.
-     *
-     * @return self New Image instance in BGR color space
-     *
-     * @throws ImageException If the color space conversion fails
-     */
-    public function toBGR(): self
-    {
-        return $this->toColorSpace(ColorSpace::BGR);
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::RGB->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to RGB', $e);
+        }
     }
 
     /**
      * Convert the image to grayscale.
      *
-     * @return self New Image instance in grayscale color space
+     * Always returns a 1-band image: alpha (if present) is dropped, and pixels
+     * are converted to luma. Idempotent if the image is already 1-band b-w.
      *
-     * @throws ImageException If the color space conversion fails
+     * @return self New 1-band grayscale Image instance
+     *
+     * @throws ImageException If the conversion fails
      */
     public function toGrayscale(): self
     {
-        return $this->toColorSpace(ColorSpace::Grayscale);
+        if (1 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::Grayscale === $this->colorSpace()
+        ) {
+            return $this;
+        }
+
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::Grayscale->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to grayscale', $e);
+        }
+    }
+
+    /**
+     * Convert the image to CIE Lab color space.
+     *
+     * Always returns a 3-band float image: alpha (if present) is dropped.
+     *
+     * @return self New 3-band Lab Image instance
+     *
+     * @throws ImageException If the conversion fails
+     */
+    public function toLab(): self
+    {
+        if (3 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::Lab === $this->colorSpace()
+        ) {
+            return $this;
+        }
+
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::Lab->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to Lab', $e);
+        }
+    }
+
+    /**
+     * Convert the image to HSV color space.
+     *
+     * Always returns a 3-band image: alpha (if present) is dropped.
+     *
+     * @return self New 3-band HSV Image instance
+     *
+     * @throws ImageException If the conversion fails
+     */
+    public function toHSV(): self
+    {
+        if (3 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::HSV === $this->colorSpace()
+        ) {
+            return $this;
+        }
+
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::HSV->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to HSV', $e);
+        }
+    }
+
+    /**
+     * Convert the image to CMYK color space.
+     *
+     * Always returns a 4-band image: alpha (if present) is dropped.
+     *
+     * @return self New 4-band CMYK Image instance
+     *
+     * @throws ImageException If the conversion fails
+     */
+    public function toCMYK(): self
+    {
+        if (4 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::CMYK === $this->colorSpace()
+        ) {
+            return $this;
+        }
+
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::CMYK->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to CMYK', $e);
+        }
+    }
+
+    /**
+     * Convert the image to Oklab color space.
+     *
+     * Always returns a 3-band float image: alpha (if present) is dropped.
+     *
+     * @return self New 3-band Oklab Image instance
+     *
+     * @throws ImageException If the conversion fails
+     */
+    public function toOklab(): self
+    {
+        if (3 === $this->bands()
+            && !$this->hasAlpha()
+            && ColorSpace::Oklab === $this->colorSpace()
+        ) {
+            return $this;
+        }
+
+        try {
+            $vipsImage = $this->stripAlpha()->colourspace(ColorSpace::Oklab->toVipsInterpretation());
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to convert to Oklab', $e);
+        }
     }
 
     /**
      * Ensure the image has an alpha (transparency) channel, adding it if necessary.
      *
-     * @return self New Image instance with alpha channel
+     * Converts the image to sRGB if it isn't already, then adds a fully opaque
+     * alpha band. Returns `$this` if the image is already a 4-band sRGB image.
+     *
+     * @return self New 4-band sRGB Image instance with alpha
      *
      * @throws ImageException If adding the alpha channel fails
      */
     public function toRGBA(): self
     {
-        if ($this->hasAlpha()) {
+        if (4 === $this->bands()
+            && $this->hasAlpha()
+            && ColorSpace::RGB === $this->colorSpace()
+        ) {
             return $this;
         }
 
         try {
-            $alpha = VipsImage::black($this->vipsImage->width, $this->vipsImage->height);
-            $alpha = $alpha->linear(1, 255)->cast($this->vipsImage->format);
-            $vipsImage = $this->vipsImage->bandjoin($alpha);
-            $vipsImage->set('interpretation', 'srgb');
+            $rgb = $this->stripAlpha()->colourspace(ColorSpace::RGB->toVipsInterpretation());
+
+            $alpha = VipsImage::black($rgb->width, $rgb->height);
+            $alpha = $alpha->linear(1, 255)->cast($rgb->format);
+            $vipsImage = $rgb->bandjoin($alpha);
+            $vipsImage = $vipsImage->copy(['interpretation' => ColorSpace::RGB->toVipsInterpretation()]);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1608,7 +1725,7 @@ final readonly class Image
             ];
 
             $vipsImage = $this->vipsImage->composite2($overlay->vipsImage, $blendMode, $options);
-            $vipsImage->set('interpretation', $this->colorSpace()->toVipsInterpretation());
+            $vipsImage = $vipsImage->copy(['interpretation' => $this->colorSpace()->toVipsInterpretation()]);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1890,5 +2007,17 @@ final readonly class Image
         } catch (\Exception $e) {
             throw ImageException::wrap('Failed to copy image', $e);
         }
+    }
+
+    /**
+     * Remove the alpha band from the image if present.
+     */
+    private function stripAlpha(): VipsImage
+    {
+        if (!$this->hasAlpha()) {
+            return $this->vipsImage;
+        }
+
+        return $this->vipsImage->extract_band(0, ['n' => $this->bands() - 1]);
     }
 }

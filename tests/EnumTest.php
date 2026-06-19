@@ -62,22 +62,19 @@ class EnumTest extends TestCase
     {
         $this->assertSame(1, ColorSpace::Grayscale->bands());
         $this->assertSame(3, ColorSpace::RGB->bands());
-        $this->assertSame(3, ColorSpace::BGR->bands());
         $this->assertSame(3, ColorSpace::HSV->bands());
         $this->assertSame(3, ColorSpace::Lab->bands());
-        $this->assertSame(4, ColorSpace::RGBA->bands());
-        $this->assertSame(4, ColorSpace::BGRA->bands());
+        $this->assertSame(3, ColorSpace::Oklab->bands());
         $this->assertSame(4, ColorSpace::CMYK->bands());
     }
 
     public function testColorSpaceVipsInterpretationRoundTrip(): void
     {
-        // Not every color space round-trips exactly (RGB → srgb, etc.)
-        // but the mapping should not throw for known ones
+        // Every ColorSpace case must round-trip through a libvips interpretation string
         foreach (ColorSpace::cases() as $cs) {
             $vips = $cs->toVipsInterpretation();
             $back = ColorSpace::fromVipsInterpretation($vips);
-            $this->assertNotNull($back);
+            $this->assertSame($cs, $back, "Round-trip failed for {$cs->name}");
         }
     }
 
