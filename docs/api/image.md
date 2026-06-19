@@ -1372,6 +1372,101 @@ $bgr = $img->reorder([2, 1, 0]);
 
 ---
 
+## Math Operations
+
+### multiply()
+
+Multiply this image by another image, pixel-by-pixel.
+
+If the other image has fewer bands, it is automatically broadcast across the bands of this image. Typical use: multiply
+an RGB image by a single-band mask.
+
+```php
+public function multiply(self $other): self
+```
+
+**Parameters:**
+
+| Parameter | Type   | Description              |
+|-----------|--------|--------------------------|
+| `$other`  | `self` | The image to multiply by |
+
+**Returns:** New Image instance with the multiplication applied
+
+**Throws:** `ImageException` if the operation fails.
+
+### add()
+
+Add another image to this one, pixel-by-pixel.
+
+```php
+public function add(self $other): self
+```
+
+**Parameters:**
+
+| Parameter | Type   | Description         |
+|-----------|--------|---------------------|
+| `$other`  | `self` | The image to add    |
+
+**Returns:** New Image instance with the addition applied
+
+**Throws:** `ImageException` if the operation fails.
+
+### subtract()
+
+Subtract another image from this one, pixel-by-pixel.
+
+```php
+public function subtract(self $other): self
+```
+
+**Parameters:**
+
+| Parameter | Type   | Description              |
+|-----------|--------|--------------------------|
+| `$other`  | `self` | The image to subtract    |
+
+**Returns:** New Image instance with the subtraction applied
+
+**Throws:** `ImageException` if the operation fails.
+
+### divide()
+
+Divide this image by another image, pixel-by-pixel.
+
+```php
+public function divide(self $other): self
+```
+
+**Parameters:**
+
+| Parameter | Type   | Description            |
+|-----------|--------|------------------------|
+| `$other`  | `self` | The image to divide by |
+
+**Returns:** New Image instance with the division applied
+
+**Throws:** `ImageException` if the operation fails.
+
+**Examples:**
+
+```php
+// Multiply by a single-band mask (broadcast to RGB)
+$result = $img->multiply($mask);
+
+// Add two images
+$combined = $img1->add($img2);
+
+// Subtract background
+$diff = $img->subtract($background);
+
+// Divide by a flat-field correction
+$corrected = $img->divide($flatField);
+```
+
+---
+
 ## Compositing / Drawing
 
 ### composite()
