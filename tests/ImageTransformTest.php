@@ -6,6 +6,7 @@ namespace PhpMlKit\Opal\Tests;
 
 use PhpMlKit\Opal\BoundingBox;
 use PhpMlKit\Opal\Color;
+use PhpMlKit\Opal\ColorSpace;
 use PhpMlKit\Opal\CompassDirection;
 use PhpMlKit\Opal\Exceptions\ShapeException;
 use PhpMlKit\Opal\FlipDirection;
@@ -269,5 +270,65 @@ class ImageTransformTest extends TestCase
         $rotated = $image->autoRotate();
         $this->assertSame(100, $rotated->width());
         $this->assertSame(100, $rotated->height());
+    }
+
+    // -------------------------------------------------------------------------
+    // Regression: Color/image band-count mismatch
+    // -------------------------------------------------------------------------
+    // toArray() used to infer its length from the color's alpha value, breaking
+    // libvips operations that need the vector length to match the destination
+    // image's band count.
+
+    public function testPadOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $this->assertSame(4, $image->bands());
+        $result = $image->pad(2, 2, 2, 2, Color::black());
+        $this->assertSame(4, $result->bands());
+        $this->assertSame(24, $result->width());
+    }
+
+    public function testPadOnRgbImageWithTransparentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB);
+        $this->assertSame(3, $image->bands());
+        $result = $image->pad(2, 2, 2, 2, Color::transparent());
+        $this->assertSame(3, $result->bands());
+    }
+
+    public function testPadToSizeOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->padToSize(30, 30, Color::black(), CompassDirection::CENTRE);
+        $this->assertSame(4, $result->bands());
+        $this->assertSame(30, $result->width());
+    }
+
+    public function testPadToSizeOnRgbImageWithTransparentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB);
+        $result = $image->padToSize(30, 30, Color::transparent(), CompassDirection::CENTRE);
+        $this->assertSame(3, $result->bands());
+    }
+
+    public function testRotateOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(40, 40, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->rotate(45, Color::black());
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testRotateOnRgbImageWithTransparentColor(): void
+    {
+        $image = Image::blank(40, 40, Color::red(), ColorSpace::RGB);
+        $result = $image->rotate(45, Color::transparent());
+        $this->assertSame(3, $result->bands());
+    }
+
+    public function testRotateOnRgbImageWithTranslucentColor(): void
+    {
+        $image = Image::blank(40, 40, Color::red(), ColorSpace::RGB);
+        $result = $image->rotate(45, Color::rgba(0, 0, 0, 128));
+        $this->assertSame(3, $result->bands());
     }
 }

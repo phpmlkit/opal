@@ -64,6 +64,36 @@ class ImageCreateTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Regression: blank() must honor ColorSpace regardless of color alpha
+    // -------------------------------------------------------------------------
+
+    public function testBlankRgbaHonorsColorSpaceWithOpaqueColor(): void
+    {
+        $image = Image::blank(10, 10, Color::red(), ColorSpace::RGBA);
+        $this->assertSame(4, $image->bands());
+        $this->assertTrue($image->hasAlpha());
+    }
+
+    public function testBlankRgbaHonorsColorSpaceWithTransparentColor(): void
+    {
+        $image = Image::blank(10, 10, Color::transparent(), ColorSpace::RGBA);
+        $this->assertSame(4, $image->bands());
+        $this->assertTrue($image->hasAlpha());
+    }
+
+    public function testBlankGrayscaleWithOpaqueColor(): void
+    {
+        $image = Image::blank(10, 10, Color::white(), ColorSpace::Grayscale);
+        $this->assertSame(1, $image->bands());
+    }
+
+    public function testBlankGrayscaleWithTransparentColor(): void
+    {
+        $image = Image::blank(10, 10, Color::transparent(), ColorSpace::Grayscale);
+        $this->assertSame(1, $image->bands());
+    }
+
+    // -------------------------------------------------------------------------
     // text
     // -------------------------------------------------------------------------
 

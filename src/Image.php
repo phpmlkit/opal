@@ -199,7 +199,7 @@ final readonly class Image
             }
 
             if (null !== $background) {
-                $vipsImage = $vipsImage->newFromImage($background->toArray());
+                $vipsImage = $vipsImage->newFromImage($background->toArray($bands));
             }
 
             $vipsImage->set('interpretation', $colorSpace->toVipsInterpretation());
@@ -507,7 +507,9 @@ final readonly class Image
 
         try {
             $background ??= Color::white();
-            $vipsImage = $this->vipsImage->flatten(['background' => $background->toArray()]);
+            // flatten() removes the alpha channel, so the background must match
+            // the output band count (this->bands() - 1), not the source.
+            $vipsImage = $this->vipsImage->flatten(['background' => $background->toArray($this->bands() - 1)]);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -873,7 +875,7 @@ final readonly class Image
 
             $vipsImage = $this->vipsImage->embed($left, $top, $width, $height, [
                 'extend' => 'background',
-                'background' => $background->toArray(),
+                'background' => $background->toArray($this->bands()),
             ]);
 
             return new self($vipsImage);
@@ -908,7 +910,7 @@ final readonly class Image
 
             $vipsImage = $this->vipsImage->gravity($direction->value, $width, $height, [
                 'extend' => 'background',
-                'background' => $background->toArray(),
+                'background' => $background->toArray($this->bands()),
             ]);
 
             return new self($vipsImage);
@@ -960,7 +962,7 @@ final readonly class Image
         try {
             $options = [];
             if (null !== $background) {
-                $options['background'] = $background->toArray();
+                $options['background'] = $background->toArray($this->bands());
             }
             $vipsImage = $this->vipsImage->rotate($angle, $options);
 
@@ -1636,7 +1638,7 @@ final readonly class Image
                 $options['fill'] = true;
             }
 
-            $vipsImage = $this->vipsImage->draw_rect($color->toFloatArray(), $left, $top, $width, $height, $options);
+            $vipsImage = $this->vipsImage->draw_rect($color->toFloatArray($this->bands()), $left, $top, $width, $height, $options);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1665,7 +1667,7 @@ final readonly class Image
                 $options['fill'] = true;
             }
 
-            $vipsImage = $this->vipsImage->draw_circle($color->toFloatArray(), $cx, $cy, $radius, $options);
+            $vipsImage = $this->vipsImage->draw_circle($color->toFloatArray($this->bands()), $cx, $cy, $radius, $options);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1689,7 +1691,7 @@ final readonly class Image
     public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color): self
     {
         try {
-            $vipsImage = $this->vipsImage->draw_line($color->toFloatArray(), $x1, $y1, $x2, $y2);
+            $vipsImage = $this->vipsImage->draw_line($color->toFloatArray($this->bands()), $x1, $y1, $x2, $y2);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1718,7 +1720,7 @@ final readonly class Image
     public function drawMask(self $mask, int $x, int $y, Color $color): self
     {
         try {
-            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray(), $mask->vipsImage, $x, $y);
+            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $mask->vipsImage, $x, $y);
 
             return new self($vipsImage);
         } catch (\Exception $e) {
@@ -1746,7 +1748,7 @@ final readonly class Image
 
             $textImage = VipsImage::text($text, $options->toVipsOptions());
 
-            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray(), $textImage, $x, $y);
+            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $textImage, $x, $y);
 
             return new self($vipsImage);
         } catch (\Exception $e) {

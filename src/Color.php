@@ -172,19 +172,54 @@ final readonly class Color
     }
 
     /**
-     * @return list<int> Either [R, G, B] or [R, G, B, A] when transparency is present
+     * Whether this color carries an alpha (transparency) component.
      */
-    public function toArray(): array
+    public function hasAlpha(): bool
     {
-        return $this->a < 255 ? [$this->r, $this->g, $this->b, $this->a] : [$this->r, $this->g, $this->b];
+        return $this->a < 255;
     }
 
     /**
-     * @return list<float> Float values for libvips draw operations
+     * Return the color as an array sized to match a given number of bands.
+     *
+     * - 1 band  → [luma]  (ITU-R BT.601 luma of the RGB components)
+     * - 3 bands → [R, G, B]  (alpha is dropped)
+     * - 4 bands → [R, G, B, A]
+     *
+     * The band count must be supplied by the caller because the decision depends
+     * on the destination image (or operation), not on the color's own alpha value.
+     * Defaults to 3 for backward compatibility with external callers.
+     *
+     * @param int $bands Number of bands the result must contain (1, 3, or 4)
+     *
+     * @return list<int>
+     *
+     * @throws \InvalidArgumentException If $bands is not 1, 3, or 4
      */
-    public function toFloatArray(): array
+    public function toArray(int $bands = 3): array
     {
-        return array_map('floatval', $this->toArray());
+        return match ($bands) {
+            1 => [(int) round(0.299 * $this->r + 0.587 * $this->g + 0.114 * $this->b)],
+            3 => [$this->r, $this->g, $this->b],
+            4 => [$this->r, $this->g, $this->b, $this->a],
+            default => throw new \InvalidArgumentException(
+                \sprintf('Color::toArray() bands must be 1, 3, or 4, got %d', $bands)
+            ),
+        };
+    }
+
+    /**
+     * Float-valued variant of toArray() for libvips draw operations.
+     *
+     * @param int $bands Number of bands the result must contain (1, 3, or 4)
+     *
+     * @return list<float>
+     *
+     * @throws \InvalidArgumentException If $bands is not 1, 3, or 4
+     */
+    public function toFloatArray(int $bands = 3): array
+    {
+        return array_map('floatval', $this->toArray($bands));
     }
 
     /**
