@@ -433,53 +433,82 @@ $exif = $img->exif();
 
 ## Color Space Conversion
 
-### toColorSpace()
-
-Convert the image to a different color space.
-
-```php
-public function toColorSpace(ColorSpace $colorSpace): self
-```
-
-**Parameters:**
-
-| Parameter     | Type         | Description                      |
-|---------------|--------------|----------------------------------|
-| `$colorSpace` | `ColorSpace` | Target color space to convert to |
-
-**Returns:** New Image instance with converted color space
-
-**Throws:** `ImageException` if the conversion fails.
+Color space conversion is performed by typed methods, one per supported target space. Each
+method drops any existing alpha channel (since libvips interprets alpha as a band, not as
+part of the color space), performs the pixel conversion, and returns a new image in the
+target space.
 
 ### toRGB()
 
-Convert the image to RGB color space.
+Convert the image to sRGB color space. Drops any alpha channel and returns a 3-band image.
 
 ```php
 public function toRGB(): self
 ```
 
-**Returns:** New Image instance in RGB color space.
+**Returns:** New 3-band sRGB Image instance.
 
-### toBGR()
-
-Convert the image to BGR color space.
-
-```php
-public function toBGR(): self
-```
-
-**Returns:** New Image instance in BGR color space.
+**Throws:** `ImageException` if the conversion fails.
 
 ### toGrayscale()
 
-Convert the image to grayscale.
+Convert the image to grayscale (1-band). Drops any alpha channel.
 
 ```php
 public function toGrayscale(): self
 ```
 
-**Returns:** New Image instance in grayscale color space.
+**Returns:** New 1-band grayscale Image instance.
+
+**Throws:** `ImageException` if the conversion fails.
+
+### toLab()
+
+Convert the image to CIE Lab color space. Drops any alpha channel.
+
+```php
+public function toLab(): self
+```
+
+**Returns:** New 3-band Lab Image instance (float band format).
+
+**Throws:** `ImageException` if the conversion fails.
+
+### toHSV()
+
+Convert the image to HSV color space. Drops any alpha channel.
+
+```php
+public function toHSV(): self
+```
+
+**Returns:** New 3-band HSV Image instance.
+
+**Throws:** `ImageException` if the conversion fails.
+
+### toCMYK()
+
+Convert the image to CMYK color space. Drops any alpha channel.
+
+```php
+public function toCMYK(): self
+```
+
+**Returns:** New 4-band CMYK Image instance.
+
+**Throws:** `ImageException` if the conversion fails.
+
+### toOklab()
+
+Convert the image to Oklab color space. Drops any alpha channel.
+
+```php
+public function toOklab(): self
+```
+
+**Returns:** New 3-band Oklab Image instance (float band format).
+
+**Throws:** `ImageException` if the conversion fails.
 
 ### toRGBA()
 
@@ -580,6 +609,12 @@ $gray = $img->toGrayscale();
 
 // Add alpha channel
 $rgba = $img->toRGBA();
+
+// Convert between color spaces (alpha is always dropped)
+$lab = $img->toLab();
+$hsv = $img->toHSV();
+$cmyk = $img->toCMYK();
+$oklab = $img->toOklab();
 
 // Flatten transparency against white background
 $opaque = $img->flattenAlpha(Color::white());

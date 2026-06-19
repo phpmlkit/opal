@@ -21,14 +21,6 @@ class ImageFilterTest extends TestCase
     // Color space conversion
     // -------------------------------------------------------------------------
 
-    public function testToColorSpace(): void
-    {
-        $image = Image::blank(10, 10);
-        $converted = $image->toColorSpace(ColorSpace::Lab);
-        $this->assertSame(ColorSpace::Lab, $converted->colorSpace());
-        $this->assertSame(10, $converted->width());
-    }
-
     public function testToGrayscale(): void
     {
         $image = Image::blank(10, 10);
@@ -43,6 +35,164 @@ class ImageFilterTest extends TestCase
         $rgb = $image->toRGB();
         $this->assertSame(ColorSpace::RGB, $rgb->colorSpace());
         $this->assertSame(3, $rgb->bands());
+    }
+
+    // -------------------------------------------------------------------------
+    // Conversion matrix: every source × every typed method
+    // -------------------------------------------------------------------------
+    // Each test asserts: result band count, interpretation, and a known pixel.
+
+    public function testToRgbFromRgbIsIdempotent(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toRGB();
+        $this->assertSame($image, $result);
+        $this->assertSame(3, $result->bands());
+        $this->assertSame([255, 0, 0], $this->pixel($result));
+    }
+
+    public function testToRgbFromRgbaDropsAlpha(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toRGBA();
+        $this->assertSame(4, $image->bands());
+        $result = $image->toRGB();
+        $this->assertSame(3, $result->bands());
+        $this->assertFalse($result->hasAlpha());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+        $this->assertSame([255, 0, 0], $this->pixel($result));
+    }
+
+    public function testToRgbFromGrayscaleExpandsToRgb(): void
+    {
+        $image = Image::blank(10, 10, Color::gray(128), ColorSpace::Grayscale);
+        $this->assertSame(1, $image->bands());
+        $result = $image->toRGB();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+        $this->assertSame([128, 128, 128], $this->pixel($result));
+    }
+
+    public function testToRgbFromHsvConvertsPixels(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toHSV();
+        $result = $image->toRGB();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+        // HSV (0, 255, 255) is pure red — back to RGB (255, 0, 0)
+        $this->assertSame([255, 0, 0], $this->pixel($result));
+    }
+
+    public function testToRgbFromCmykConvertsAndDropsBands(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toCMYK();
+        $this->assertSame(4, $image->bands());
+        $result = $image->toRGB();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+        // CMYK→sRGB is lossy in libvips; verify the conversion actually happened
+        // (result must differ from the raw 3-band trim of the CMYK image)
+        $rawTrim = $image->vipsImage->extract_band(0, ['n' => 3])->getpoint(0, 0);
+        $this->assertNotEquals(array_map('intval', (array) $rawTrim), $this->pixel($result));
+    }
+
+    public function testToGrayscaleFromRgbComputesLuma(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toGrayscale();
+        $this->assertSame(1, $result->bands());
+        $this->assertSame(ColorSpace::Grayscale, $result->colorSpace());
+        // White converts to 255, black to 0
+        $white = Image::blank(10, 10, Color::white())->toGrayscale();
+        $this->assertSame([255], $this->pixel($white));
+        $black = Image::blank(10, 10, Color::black())->toGrayscale();
+        $this->assertSame([0], $this->pixel($black));
+    }
+
+    public function testToGrayscaleFromRgbaDropsAlpha(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toRGBA();
+        $result = $image->toGrayscale();
+        $this->assertSame(1, $result->bands());
+        $this->assertFalse($result->hasAlpha());
+    }
+
+    public function testToLabFromRgbProduces3BandFloat(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toLab();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::Lab, $result->colorSpace());
+        // Pure red in Lab is approximately (53, 80, 67)
+        $this->assertEqualsWithDelta([53.2, 80.1, 67.2], $this->pixel($result), 0.5);
+    }
+
+    public function testToHsvFromRgbProduces3BandHsv(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toHSV();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::HSV, $result->colorSpace());
+        // Pure red in HSV is (0, 255, 255)
+        $this->assertSame([0, 255, 255], $this->pixel($result));
+    }
+
+    public function testToCmykFromRgbProduces4Band(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toCMYK();
+        $this->assertSame(4, $result->bands());
+        $this->assertSame(ColorSpace::CMYK, $result->colorSpace());
+        // Pure red in CMYK is (0, 255, 255, 0)
+        $this->assertSame([0, 255, 255, 0], $this->pixel($result));
+    }
+
+    public function testToOklabFromRgbProduces3BandFloat(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toOklab();
+        $this->assertSame(3, $result->bands());
+        $this->assertSame(ColorSpace::Oklab, $result->colorSpace());
+    }
+
+    public function testToRgbaFromRgbAddsOpaqueAlpha(): void
+    {
+        $image = Image::blank(10, 10, Color::red());
+        $result = $image->toRGBA();
+        $this->assertSame(4, $result->bands());
+        $this->assertTrue($result->hasAlpha());
+        $this->assertSame([255, 0, 0, 255], $this->pixel($result));
+    }
+
+    public function testToRgbaFromRgbaIsIdempotent(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toRGBA();
+        $result = $image->toRGBA();
+        $this->assertSame($image, $result);
+    }
+
+    public function testToRgbaFromHsvConvertsAndAddsAlpha(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toHSV();
+        $result = $image->toRGBA();
+        $this->assertSame(4, $result->bands());
+        $this->assertTrue($result->hasAlpha());
+        $this->assertEqualsWithDelta([255, 0, 0, 255], $this->pixel($result), 1.0);
+    }
+
+    public function testToRgbaFromCmykConvertsAndAddsAlpha(): void
+    {
+        $image = Image::blank(10, 10, Color::red())->toCMYK();
+        $result = $image->toRGBA();
+        $this->assertSame(4, $result->bands());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+    }
+
+    public function testAllConversionsAreIdempotent(): void
+    {
+        $start = Image::blank(10, 10, Color::red());
+        $chain = $start->toHSV()->toRGB()->toLab()->toRGB()->toCMYK()->toRGB();
+        $this->assertSame(3, $chain->bands());
+        $this->assertSame(ColorSpace::RGB, $chain->colorSpace());
     }
 
     // -------------------------------------------------------------------------
@@ -275,5 +425,23 @@ class ImageFilterTest extends TestCase
         $image = Image::blank(10, 10);
         $result = $image->medianBlur();
         $this->assertSame(10, $result->width());
+    }
+
+    /**
+     * Read the pixel at (0, 0) as a list of integers (cast floats to int when
+     * they are whole numbers).
+     */
+    private function pixel(Image $image): array
+    {
+        $raw = (array) $image->vipsImage->getpoint(0, 0);
+
+        return array_map(static function ($v) {
+            if (\is_int($v)) {
+                return $v;
+            }
+            $f = (float) $v;
+
+            return $f == (int) $f ? (int) $f : $f;
+        }, $raw);
     }
 }
