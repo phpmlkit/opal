@@ -110,4 +110,71 @@ class ImageDrawTest extends TestCase
         $this->assertSame(50, $result->width());
         $this->assertSame(50, $result->height());
     }
+
+    // -------------------------------------------------------------------------
+    // Regression: Color/image band-count mismatch
+    // -------------------------------------------------------------------------
+    // These cover the cases where toArray() used to infer its length from
+    // the color's alpha value, breaking libvips operations that need the
+    // vector length to match the destination image's band count.
+
+    public function testDrawRectOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $this->assertSame(4, $image->bands());
+        $result = $image->drawRect(2, 2, 5, 5, Color::blue(), fill: true);
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawRectOnRgbImageWithTranslucentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB);
+        $this->assertSame(3, $image->bands());
+        $result = $image->drawRect(2, 2, 5, 5, Color::rgba(0, 255, 0, 128), fill: true);
+        $this->assertSame(3, $result->bands());
+    }
+
+    public function testDrawRectOnRgbImageWithTransparentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB);
+        $result = $image->drawRect(2, 2, 5, 5, Color::transparent(), fill: true);
+        $this->assertSame(3, $result->bands());
+    }
+
+    public function testDrawRectOnGrayscaleImage(): void
+    {
+        $image = Image::blank(20, 20, Color::gray(64), ColorSpace::Grayscale);
+        $this->assertSame(1, $image->bands());
+        $result = $image->drawRect(2, 2, 5, 5, Color::white(), fill: true);
+        $this->assertSame(1, $result->bands());
+    }
+
+    public function testDrawCircleOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->drawCircle(10, 10, 5, Color::blue(), fill: true);
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawLineOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->drawLine(0, 0, 10, 10, Color::green());
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawMaskOnRgbaImageWithOpaqueColor(): void
+    {
+        $mask = Image::blank(10, 10, Color::white(), ColorSpace::Grayscale);
+        $image = Image::blank(20, 20, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->drawMask($mask, 2, 2, Color::blue());
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawTextOnRgbaImageWithOpaqueColor(): void
+    {
+        $image = Image::blank(100, 50, Color::red(), ColorSpace::RGB)->toRGBA();
+        $result = $image->drawText('Hi', 5, 5, Color::white());
+        $this->assertSame(4, $result->bands());
+    }
 }

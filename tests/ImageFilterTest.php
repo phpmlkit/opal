@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpMlKit\Opal\Tests;
 
 use PhpMlKit\Opal\BandFormat;
+use PhpMlKit\Opal\Color;
 use PhpMlKit\Opal\ColorSpace;
 use PhpMlKit\Opal\Image;
 use PHPUnit\Framework\TestCase;
@@ -123,6 +124,27 @@ class ImageFilterTest extends TestCase
         $this->assertSame(4, $pre->bands());
         $un = $pre->unpremultiplyAlpha();
         $this->assertSame(4, $un->bands());
+    }
+
+    // -------------------------------------------------------------------------
+    // Regression: Color/image band-count mismatch
+    // -------------------------------------------------------------------------
+    // flattenAlpha() used to pass toArray() to libvips without specifying band
+    // count. An opaque background color on a 4-band image would yield a 3-element
+    // vector and libvips would reject it.
+
+    public function testFlattenAlphaWithOpaqueBackground(): void
+    {
+        $image = Image::blank(10, 10)->toRGBA();
+        $flattened = $image->flattenAlpha(Color::white());
+        $this->assertSame(3, $flattened->bands());
+    }
+
+    public function testFlattenAlphaWithTranslucentBackground(): void
+    {
+        $image = Image::blank(10, 10)->toRGBA();
+        $flattened = $image->flattenAlpha(Color::rgba(255, 255, 255, 200));
+        $this->assertSame(3, $flattened->bands());
     }
 
     // -------------------------------------------------------------------------

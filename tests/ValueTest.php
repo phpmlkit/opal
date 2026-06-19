@@ -73,8 +73,45 @@ class ValueTest extends TestCase
 
     public function testColorToArray(): void
     {
-        $this->assertCount(3, Color::rgb(255, 0, 0)->toArray());
-        $this->assertCount(4, Color::rgba(255, 0, 0, 128)->toArray());
+        $this->assertCount(3, Color::rgb(255, 0, 0)->toArray(3));
+        $this->assertCount(4, Color::rgba(255, 0, 0, 128)->toArray(4));
+    }
+
+    public function testColorToArrayDropsAlphaWhenAsking3Bands(): void
+    {
+        $this->assertSame([255, 0, 0, 255], Color::rgb(255, 0, 0)->toArray(4));
+        $this->assertSame([255, 0, 0], Color::rgba(255, 0, 0, 128)->toArray(3));
+    }
+
+    public function testColorToArrayOneBandIsLuma(): void
+    {
+        // ITU-R BT.601 luma of (255, 0, 0) is 0.299 * 255 ≈ 76
+        $this->assertSame([76], Color::rgb(255, 0, 0)->toArray(1));
+        // Luma of pure white is 255
+        $this->assertSame([255], Color::white()->toArray(1));
+        // Luma of pure black is 0
+        $this->assertSame([0], Color::black()->toArray(1));
+    }
+
+    public function testColorToArrayInvalidBandsThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Color::red()->toArray(2);
+    }
+
+    public function testColorToFloatArrayMatchesToArray(): void
+    {
+        $this->assertSame([255.0, 0.0, 0.0], Color::rgb(255, 0, 0)->toFloatArray(3));
+        $this->assertSame([255.0, 0.0, 0.0, 128.0], Color::rgba(255, 0, 0, 128)->toFloatArray(4));
+    }
+
+    public function testColorHasAlpha(): void
+    {
+        $this->assertFalse(Color::rgb(255, 0, 0)->hasAlpha());
+        $this->assertFalse(Color::gray(128)->hasAlpha());
+        $this->assertFalse(Color::white()->hasAlpha());
+        $this->assertTrue(Color::rgba(255, 0, 0, 128)->hasAlpha());
+        $this->assertTrue(Color::transparent()->hasAlpha());
     }
 
     public function testColorToHex(): void
@@ -285,7 +322,7 @@ class ValueTest extends TestCase
 
     public function testColorTransparentToArray(): void
     {
-        $this->assertSame([0, 0, 0, 0], Color::transparent()->toArray());
+        $this->assertSame([0, 0, 0, 0], Color::transparent()->toArray(4));
     }
 
     public function testColorToHexWithAlpha(): void
