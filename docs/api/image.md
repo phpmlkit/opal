@@ -434,9 +434,8 @@ $exif = $img->exif();
 ## Color Space Conversion
 
 Color space conversion is performed by typed methods, one per supported target space. Each
-method drops any existing alpha channel (since libvips interprets alpha as a band, not as
-part of the color space), performs the pixel conversion, and returns a new image in the
-target space.
+method drops any existing alpha channel, performs the pixel conversion, and returns a new
+image in the target space.
 
 ### toRGB()
 
@@ -1542,19 +1541,20 @@ public function composite(self $overlay, int $x = 0, int $y = 0, string $blendMo
 Draw a rectangle on the image.
 
 ```php
-public function drawRect(int $left, int $top, int $width, int $height, Color $color, bool $fill = false): self
+public function drawRect(int $left, int $top, int $width, int $height, Color $color, bool $fill = false, bool $blend = false): self
 ```
 
 **Parameters:**
 
-| Parameter | Type    | Default | Description                                          |
-|-----------|---------|---------|------------------------------------------------------|
-| `$left`   | `int`   | —       | X-coordinate of the top-left corner                  |
-| `$top`    | `int`   | —       | Y-coordinate of the top-left corner                  |
-| `$width`  | `int`   | —       | Width of the rectangle                               |
-| `$height` | `int`   | —       | Height of the rectangle                              |
-| `$color`  | `Color` | —       | Color of the rectangle                               |
-| `$fill`   | `bool`  | `false` | Whether to fill the rectangle (false = outline only) |
+| Parameter | Type    | Default | Description                                                                                                              |
+|-----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `$left`   | `int`   | —       | X-coordinate of the top-left corner                                                                                      |
+| `$top`    | `int`   | —       | Y-coordinate of the top-left corner                                                                                      |
+| `$width`  | `int`   | —       | Width of the rectangle                                                                                                   |
+| `$height` | `int`   | —       | Height of the rectangle                                                                                                  |
+| `$color`  | `Color` | —       | Color of the rectangle                                                                                                   |
+| `$fill`   | `bool`  | `false` | Whether to fill the rectangle (false = outline only)                                                                     |
+| `$blend`  | `bool`  | `false` | Whether to alpha-composite the color onto the source. When true the result is always 4-band (slower than the default path) |
 
 **Returns:** New Image instance with the rectangle drawn
 
@@ -1565,18 +1565,19 @@ public function drawRect(int $left, int $top, int $width, int $height, Color $co
 Draw a circle on the image.
 
 ```php
-public function drawCircle(int $cx, int $cy, int $radius, Color $color, bool $fill = false): self
+public function drawCircle(int $cx, int $cy, int $radius, Color $color, bool $fill = false, bool $blend = false): self
 ```
 
 **Parameters:**
 
-| Parameter | Type    | Default | Description                                       |
-|-----------|---------|---------|---------------------------------------------------|
-| `$cx`     | `int`   | —       | X-coordinate of the circle center                 |
-| `$cy`     | `int`   | —       | Y-coordinate of the circle center                 |
-| `$radius` | `int`   | —       | Radius of the circle                              |
-| `$color`  | `Color` | —       | Color of the circle                               |
-| `$fill`   | `bool`  | `false` | Whether to fill the circle (false = outline only) |
+| Parameter | Type    | Default | Description                                                                                                              |
+|-----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `$cx`     | `int`   | —       | X-coordinate of the circle center                                                                                        |
+| `$cy`     | `int`   | —       | Y-coordinate of the circle center                                                                                        |
+| `$radius` | `int`   | —       | Radius of the circle                                                                                                     |
+| `$color`  | `Color` | —       | Color of the circle                                                                                                      |
+| `$fill`   | `bool`  | `false` | Whether to fill the circle (false = outline only)                                                                        |
+| `$blend`  | `bool`  | `false` | Whether to alpha-composite the color onto the source. When true the result is always 4-band (slower than the default path) |
 
 **Returns:** New Image instance with the circle drawn
 
@@ -1587,18 +1588,19 @@ public function drawCircle(int $cx, int $cy, int $radius, Color $color, bool $fi
 Draw a 1-pixel-wide line between two coordinates on the image.
 
 ```php
-public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color): self
+public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color, bool $blend = false): self
 ```
 
 **Parameters:**
 
-| Parameter | Type    | Description                     |
-|-----------|---------|---------------------------------|
-| `$x1`     | `int`   | X-coordinate of the start point |
-| `$y1`     | `int`   | Y-coordinate of the start point |
-| `$x2`     | `int`   | X-coordinate of the end point   |
-| `$y2`     | `int`   | Y-coordinate of the end point   |
-| `$color`  | `Color` | Color of the line               |
+| Parameter | Type    | Default | Description                                                                                                              |
+|-----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `$x1`     | `int`   | —       | X-coordinate of the start point                                                                                          |
+| `$y1`     | `int`   | —       | Y-coordinate of the start point                                                                                          |
+| `$x2`     | `int`   | —       | X-coordinate of the end point                                                                                            |
+| `$y2`     | `int`   | —       | Y-coordinate of the end point                                                                                            |
+| `$color`  | `Color` | —       | Color of the line                                                                                                        |
+| `$blend`  | `bool`  | `false` | Whether to alpha-composite the color onto the source. When true the result is always 4-band (slower than the default path) |
 
 **Returns:** New Image instance with the line drawn
 
@@ -1613,17 +1615,18 @@ Draw ink onto the image using a single-band 8-bit image as a stencil mask. The m
 - 1–254 → partial transparency proportional to the value
 
 ```php
-public function drawMask(self $mask, int $x, int $y, Color $color): self
+public function drawMask(self $mask, int $x, int $y, Color $color, bool $blend = false): self
 ```
 
 **Parameters:**
 
-| Parameter | Type    | Description                                    |
-|-----------|---------|------------------------------------------------|
-| `$mask`   | `self`  | Single-band 8-bit mask image used as a stencil |
-| `$x`      | `int`   | X-coordinate where the mask is placed          |
-| `$y`      | `int`   | Y-coordinate where the mask is placed          |
-| `$color`  | `Color` | The ink color to apply through the mask        |
+| Parameter | Type    | Default | Description                                                                                                              |
+|-----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `$mask`   | `self`  | —       | Single-band 8-bit mask image used as a stencil                                                                           |
+| `$x`      | `int`   | —       | X-coordinate where the mask is placed                                                                                    |
+| `$y`      | `int`   | —       | Y-coordinate where the mask is placed                                                                                    |
+| `$color`  | `Color` | —       | The ink color to apply through the mask                                                                                  |
+| `$blend`  | `bool`  | `false` | Whether to alpha-composite the color onto the source. When true the result is always 4-band (slower than the default path) |
 
 **Returns:** New Image instance with the masked ink drawn
 
@@ -1634,22 +1637,36 @@ public function drawMask(self $mask, int $x, int $y, Color $color): self
 Draw text on the image.
 
 ```php
-public function drawText(string $text, int $x, int $y, ?Color $color = null, ?TextOptions $options = null): self
+public function drawText(string $text, int $x, int $y, ?Color $color = null, ?TextOptions $options = null, bool $blend = false): self
 ```
 
 **Parameters:**
 
-| Parameter  | Type           | Default | Description                        |
-|------------|----------------|---------|------------------------------------|
-| `$text`    | `string`       | —       | The text to draw                   |
-| `$x`       | `int`          | —       | X-coordinate for the text position |
-| `$y`       | `int`          | —       | Y-coordinate for the text position |
-| `$color`   | `?Color`       | `null`  | Color of the text (null = white)   |
-| `$options` | `?TextOptions` | `null`  | Optional text rendering options    |
+| Parameter  | Type           | Default | Description                                                                                                              |
+|------------|----------------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `$text`    | `string`       | —       | The text to draw                                                                                                         |
+| `$x`       | `int`          | —       | X-coordinate for the text position                                                                                       |
+| `$y`       | `int`          | —       | Y-coordinate for the text position                                                                                       |
+| `$color`   | `?Color`       | `null`  | Color of the text (null = white)                                                                                         |
+| `$options` | `?TextOptions` | `null`  | Optional text rendering options                                                                                          |
+| `$blend`   | `bool`         | `false` | Whether to alpha-composite the color onto the source. When true the result is always 4-band (slower than the default path) |
 
 **Returns:** New Image instance with the text drawn
 
 **Throws:** `ImageException` if drawing fails.
+
+**About the `$blend` flag**
+
+By default all draw operations write the color directly to the destination
+pixels: the source pixels are replaced, no alpha blending happens, and any
+alpha in `$color` is dropped on 3-band sources. This is fast and predictable
+but does not match what most image libraries do for translucent colors.
+
+When `$blend` is set to `true`, the color is alpha-composited onto the
+source: a 50% red on white becomes pink, transparent ink preserves the
+underlying pixels, etc. The result is always a 4-band sRGB image. This
+path is slower than the default because it does an additional compositing
+step after drawing.
 
 **Examples:**
 
@@ -1673,6 +1690,10 @@ $img = $img->drawLine(0, 0, 100, 100, Color::white());
 // Draw text with options
 $img = $img->drawText('Hello World', 100, 200, Color::white(),
     TextOptions::default()->withFontSize(32));
+
+// Draw a translucent rectangle that blends with the underlying image
+$img = $img->drawRect(50, 50, 200, 100, Color::rgba(255, 0, 0, 128),
+    fill: true, blend: true);
 ```
 
 ---
