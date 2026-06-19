@@ -1499,6 +1499,86 @@ final readonly class Image
     }
 
     // -------------------------------------------------------------------------
+    // Math Operations
+    // -------------------------------------------------------------------------
+
+    /**
+     * Multiply this image by another image, pixel-by-pixel.
+     *
+     * If the other image has fewer bands, it is automatically broadcast
+     * across the bands of this image. Typical use: multiply an RGB image
+     * by a single-band mask.
+     *
+     * @param self $other The image to multiply with
+     *
+     * @return self New Image instance
+     *
+     * @throws ImageException If the operation fails
+     */
+    public function multiply(self $other): self
+    {
+        try {
+            return new self($this->vipsImage->multiply($other->vipsImage));
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to multiply images', $e);
+        }
+    }
+
+    /**
+     * Add another image to this one, pixel-by-pixel.
+     *
+     * @param self $other The image to add
+     *
+     * @return self New Image instance
+     *
+     * @throws ImageException If the operation fails
+     */
+    public function add(self $other): self
+    {
+        try {
+            return new self($this->vipsImage->add($other->vipsImage));
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to add images', $e);
+        }
+    }
+
+    /**
+     * Subtract another image from this one, pixel-by-pixel.
+     *
+     * @param self $other The image to subtract
+     *
+     * @return self New Image instance
+     *
+     * @throws ImageException If the operation fails
+     */
+    public function subtract(self $other): self
+    {
+        try {
+            return new self($this->vipsImage->subtract($other->vipsImage));
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to subtract images', $e);
+        }
+    }
+
+    /**
+     * Divide this image by another image, pixel-by-pixel.
+     *
+     * @param self $other The image to divide by
+     *
+     * @return self New Image instance
+     *
+     * @throws ImageException If the operation fails
+     */
+    public function divide(self $other): self
+    {
+        try {
+            return new self($this->vipsImage->divide($other->vipsImage));
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to divide images', $e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Compositing / Drawing (Visualization Helpers)
     // -------------------------------------------------------------------------
 
