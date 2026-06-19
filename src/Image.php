@@ -1736,31 +1736,54 @@ final readonly class Image
     /**
      * Draw a rectangle on the image.
      *
+     * When `$blend` is false (the default) the color is written directly to
+     * the destination pixels with no compositing. The result has the same
+     * band count as the source image; any alpha in `$color` is dropped for
+     * 3-band sources.
+     *
+     * When `$blend` is true, the color is alpha-composited onto the source
+     * using the `over` blend mode. The result is always a 4-band sRGB image
+     * so the alpha channel is preserved. This is slower than the non-blending
+     * path.
+     *
      * @param int   $left   X-coordinate of the top-left corner
      * @param int   $top    Y-coordinate of the top-left corner
      * @param int   $width  Width of the rectangle in pixels
      * @param int   $height Height of the rectangle in pixels
      * @param Color $color  Color of the rectangle
      * @param bool  $fill   Whether to fill the rectangle (default: false for outline only)
+     * @param bool  $blend  Whether to alpha-composite the color onto the source
+     *                      (default: false). When true the result is always 4-band.
      *
      * @return self New Image instance with the rectangle drawn
      *
      * @throws ImageException If drawing the rectangle fails
      */
-    public function drawRect(int $left, int $top, int $width, int $height, Color $color, bool $fill = false): self
+    public function drawRect(int $left, int $top, int $width, int $height, Color $color, bool $fill = false, bool $blend = false): self
     {
-        try {
+        if (!$blend) {
+            try {
+                $options = [];
+                if ($fill) {
+                    $options['fill'] = true;
+                }
+
+                $vipsImage = $this->vipsImage->draw_rect($color->toFloatArray($this->bands()), $left, $top, $width, $height, $options);
+
+                return new self($vipsImage);
+            } catch (\Exception $e) {
+                throw ImageException::wrap('Failed to draw rectangle', $e);
+            }
+        }
+
+        return $this->drawBlended(static function (VipsImage $canvas) use ($left, $top, $width, $height, $color, $fill) {
             $options = [];
             if ($fill) {
                 $options['fill'] = true;
             }
 
-            $vipsImage = $this->vipsImage->draw_rect($color->toFloatArray($this->bands()), $left, $top, $width, $height, $options);
-
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to draw rectangle', $e);
-        }
+            return $canvas->draw_rect($color->toFloatArray(4), $left, $top, $width, $height, $options);
+        }, 'Failed to draw rectangle');
     }
 
     /**
@@ -1771,25 +1794,38 @@ final readonly class Image
      * @param int   $radius Radius of the circle in pixels
      * @param Color $color  Color of the circle
      * @param bool  $fill   Whether to fill the circle (default: false for outline only)
+     * @param bool  $blend  Whether to alpha-composite the color onto the source
+     *                      (default: false). When true the result is always 4-band.
      *
      * @return self New Image instance with the circle drawn
      *
      * @throws ImageException If drawing the circle fails
      */
-    public function drawCircle(int $cx, int $cy, int $radius, Color $color, bool $fill = false): self
+    public function drawCircle(int $cx, int $cy, int $radius, Color $color, bool $fill = false, bool $blend = false): self
     {
-        try {
+        if (!$blend) {
+            try {
+                $options = [];
+                if ($fill) {
+                    $options['fill'] = true;
+                }
+
+                $vipsImage = $this->vipsImage->draw_circle($color->toFloatArray($this->bands()), $cx, $cy, $radius, $options);
+
+                return new self($vipsImage);
+            } catch (\Exception $e) {
+                throw ImageException::wrap('Failed to draw circle', $e);
+            }
+        }
+
+        return $this->drawBlended(static function (VipsImage $canvas) use ($cx, $cy, $radius, $color, $fill) {
             $options = [];
             if ($fill) {
                 $options['fill'] = true;
             }
 
-            $vipsImage = $this->vipsImage->draw_circle($color->toFloatArray($this->bands()), $cx, $cy, $radius, $options);
-
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to draw circle', $e);
-        }
+            return $canvas->draw_circle($color->toFloatArray(4), $cx, $cy, $radius, $options);
+        }, 'Failed to draw circle');
     }
 
     /**
@@ -1800,20 +1836,28 @@ final readonly class Image
      * @param int   $x2    X-coordinate of the end point
      * @param int   $y2    Y-coordinate of the end point
      * @param Color $color Color of the line
+     * @param bool  $blend Whether to alpha-composite the color onto the source
+     *                     (default: false). When true the result is always 4-band.
      *
      * @return self New Image instance with the line drawn
      *
      * @throws ImageException If drawing the line fails
      */
-    public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color): self
+    public function drawLine(int $x1, int $y1, int $x2, int $y2, Color $color, bool $blend = false): self
     {
-        try {
-            $vipsImage = $this->vipsImage->draw_line($color->toFloatArray($this->bands()), $x1, $y1, $x2, $y2);
+        if (!$blend) {
+            try {
+                $vipsImage = $this->vipsImage->draw_line($color->toFloatArray($this->bands()), $x1, $y1, $x2, $y2);
 
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to draw line', $e);
+                return new self($vipsImage);
+            } catch (\Exception $e) {
+                throw ImageException::wrap('Failed to draw line', $e);
+            }
         }
+
+        return $this->drawBlended(static function (VipsImage $canvas) use ($x1, $y1, $x2, $y2, $color) {
+            return $canvas->draw_line($color->toFloatArray(4), $x1, $y1, $x2, $y2);
+        }, 'Failed to draw line');
     }
 
     /**
@@ -1822,55 +1866,74 @@ final readonly class Image
      * The mask is a monochrome image where each pixel value controls how much
      * of the ink color is applied to the source:
      *   -   0 (black)  → fully transparent — the original image is preserved
-     *   - 255 (white)  → fully opaque     — the ink color is applied at full strength
+     * - 255 (white)  → fully opaque     — the ink color is applied at full strength
      *   -   1 … 254    → partial transparency proportional to the value
      *
      * @param self  $mask  Single-band 8-bit mask image used as a stencil
      * @param int   $x     X-coordinate where the mask is placed on the source
      * @param int   $y     Y-coordinate where the mask is placed on the source
      * @param Color $color The ink color to apply through the mask
+     * @param bool  $blend Whether to alpha-composite the color onto the source
+     *                     (default: false). When true the result is always 4-band.
      *
      * @return self New Image instance with the masked ink drawn
      *
      * @throws ImageException If drawing the mask fails
      */
-    public function drawMask(self $mask, int $x, int $y, Color $color): self
+    public function drawMask(self $mask, int $x, int $y, Color $color, bool $blend = false): self
     {
-        try {
-            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $mask->vipsImage, $x, $y);
+        if (!$blend) {
+            try {
+                $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $mask->vipsImage, $x, $y);
 
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to draw mask', $e);
+                return new self($vipsImage);
+            } catch (\Exception $e) {
+                throw ImageException::wrap('Failed to draw mask', $e);
+            }
         }
+
+        return $this->drawBlended(static function (VipsImage $canvas) use ($mask, $x, $y, $color) {
+            return $canvas->draw_mask($color->toFloatArray(4), $mask->vipsImage, $x, $y);
+        }, 'Failed to draw mask');
     }
 
     /**
      * Draw text on the image.
      *
-     * @param string     $text  The text to draw
-     * @param int        $x     X-coordinate for the text position
-     * @param int        $y     Y-coordinate for the text position
-     * @param null|Color $color Color of the text (default: white)
+     * @param string           $text    Text to draw
+     * @param int              $x       X-coordinate for the text position
+     * @param int              $y       Y-coordinate for the text position
+     * @param null|Color       $color   Color of the text (default: white)
+     * @param null|TextOptions $options Text rendering options
+     * @param bool             $blend   Whether to alpha-composite the color onto the source
+     *                                  (default: false). When true the result is always 4-band.
      *
      * @return self New Image instance with the text drawn
      *
      * @throws ImageException If drawing the text fails
      */
-    public function drawText(string $text, int $x, int $y, ?Color $color = null, ?TextOptions $options = null): self
+    public function drawText(string $text, int $x, int $y, ?Color $color = null, ?TextOptions $options = null, bool $blend = false): self
     {
-        try {
-            $options ??= TextOptions::default();
-            $color ??= Color::white();
+        $options ??= TextOptions::default();
+        $color ??= Color::white();
 
+        if (!$blend) {
+            try {
+                $textImage = VipsImage::text($text, $options->toVipsOptions());
+
+                $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $textImage, $x, $y);
+
+                return new self($vipsImage);
+            } catch (\Exception $e) {
+                throw ImageException::wrap('Failed to draw text', $e);
+            }
+        }
+
+        return $this->drawBlended(static function (VipsImage $canvas) use ($text, $options, $color, $x, $y) {
             $textImage = VipsImage::text($text, $options->toVipsOptions());
 
-            $vipsImage = $this->vipsImage->draw_mask($color->toFloatArray($this->bands()), $textImage, $x, $y);
-
-            return new self($vipsImage);
-        } catch (\Exception $e) {
-            throw ImageException::wrap('Failed to draw text', $e);
-        }
+            return $canvas->draw_mask($color->toFloatArray(4), $textImage, $x, $y);
+        }, 'Failed to draw text');
     }
 
     // -------------------------------------------------------------------------
@@ -2006,6 +2069,38 @@ final readonly class Image
             return new self($vipsImage);
         } catch (\Exception $e) {
             throw ImageException::wrap('Failed to copy image', $e);
+        }
+    }
+
+    /**
+     * Apply a draw operation with alpha blending. Draws the shape onto a
+     * transparent 4-band sRGB canvas, then composites the canvas over the
+     * (RGBA-converted) source using the `over` blend mode. The result is
+     * always a 4-band sRGB image.
+     */
+    private function drawBlended(callable $drawOnCanvas, string $errorMessage): self
+    {
+        try {
+            $baseRgba = $this->toRGBA()->vipsImage;
+
+            $width = $baseRgba->width;
+            $height = $baseRgba->height;
+
+            $canvas = VipsImage::black($width, $height)
+                ->bandjoin([VipsImage::black($width, $height), VipsImage::black($width, $height), VipsImage::black($width, $height)])
+                ->copy(['interpretation' => ColorSpace::RGB->toVipsInterpretation()])
+                ->cast('uchar');
+
+            $stamp = $drawOnCanvas($canvas);
+
+            $vipsImage = $baseRgba->composite2($stamp, 'over', [
+                'compositing_space' => ColorSpace::RGB->toVipsInterpretation(),
+            ]);
+            $vipsImage = $vipsImage->copy(['interpretation' => ColorSpace::RGB->toVipsInterpretation()]);
+
+            return new self($vipsImage);
+        } catch (\Exception $e) {
+            throw ImageException::wrap($errorMessage, $e);
         }
     }
 

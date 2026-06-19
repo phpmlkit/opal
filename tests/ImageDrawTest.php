@@ -177,4 +177,113 @@ class ImageDrawTest extends TestCase
         $result = $image->drawText('Hi', 5, 5, Color::white());
         $this->assertSame(4, $result->bands());
     }
+
+    // -------------------------------------------------------------------------
+    // blend flag: alpha compositing
+    // -------------------------------------------------------------------------
+    // Without blend=true, libvips writes the color directly to destination
+    // pixels (replace, not blend). With blend=true the color is alpha-
+    // composited onto the source using libvips's `over` blend mode, and the
+    // result is always 4-band.
+
+    public function testDrawRectBlendProduces4BandResult(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawRect(5, 5, 10, 10, Color::rgba(255, 0, 0, 128), fill: true, blend: true);
+        $this->assertSame(4, $result->bands());
+        $this->assertSame(ColorSpace::RGB, $result->colorSpace());
+    }
+
+    public function testDrawRectBlendBlendsTranslucentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawRect(5, 5, 10, 10, Color::rgba(255, 0, 0, 128), fill: true, blend: true);
+        // 50% red over white ≈ (255, 127, 127, 255) (alpha=128/255 of red over white)
+        $px = $result->vipsImage->getpoint(7, 7);
+        $this->assertEqualsWithDelta([255.0, 127.0, 127.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawRectBlendInvisibleColorLeavesSourceUnchanged(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawRect(5, 5, 10, 10, Color::rgba(255, 0, 0, 0), fill: true, blend: true);
+        $px = $result->vipsImage->getpoint(7, 7);
+        $this->assertEqualsWithDelta([255.0, 255.0, 255.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawRectBlendPreservesPixelsOutsideRect(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawRect(5, 5, 10, 10, Color::rgba(255, 0, 0, 128), fill: true, blend: true);
+        // Pixel outside the rect (2, 2) should remain white
+        $px = $result->vipsImage->getpoint(2, 2);
+        $this->assertEqualsWithDelta([255.0, 255.0, 255.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawRectWithoutBlendReplacesNotBlends(): void
+    {
+        // Default behavior: color replaces destination, alpha is dropped on 3-band
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawRect(5, 5, 10, 10, Color::rgba(255, 0, 0, 128), fill: true);
+        $this->assertSame(3, $result->bands());
+        $px = $result->vipsImage->getpoint(7, 7);
+        $this->assertSame([255, 0, 0], array_map('intval', (array) $px));
+    }
+
+    public function testDrawCircleBlendBlendsTranslucentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawCircle(10, 10, 5, Color::rgba(0, 0, 255, 128), fill: true, blend: true);
+        $this->assertSame(4, $result->bands());
+        $px = $result->vipsImage->getpoint(10, 10);
+        $this->assertEqualsWithDelta([127.0, 127.0, 255.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawLineBlendBlendsTranslucentColor(): void
+    {
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawLine(0, 0, 20, 20, Color::rgba(255, 0, 0, 128), blend: true);
+        $this->assertSame(4, $result->bands());
+        $px = $result->vipsImage->getpoint(10, 10);
+        $this->assertEqualsWithDelta([255.0, 127.0, 127.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawMaskBlendBlendsInkThroughStencil(): void
+    {
+        $mask = Image::blank(20, 20, Color::gray(255), ColorSpace::Grayscale);
+        $image = Image::blank(20, 20, Color::white());
+        $result = $image->drawMask($mask, 0, 0, Color::rgba(255, 0, 0, 128), blend: true);
+        $this->assertSame(4, $result->bands());
+        $px = $result->vipsImage->getpoint(10, 10);
+        $this->assertEqualsWithDelta([255.0, 127.0, 127.0, 255.0], array_map('floatval', (array) $px), 1.0);
+    }
+
+    public function testDrawTextBlendBlendsTranslucentText(): void
+    {
+        $image = Image::blank(200, 50, Color::white());
+        $result = $image->drawText('Hi', 5, 5, Color::rgba(0, 0, 0, 128), blend: true);
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawRectBlendOn3BandSourceBecomes4Band(): void
+    {
+        // Even though source is 3-band, blend produces 4-band output
+        $image = Image::blank(20, 20, Color::white());
+        $this->assertSame(3, $image->bands());
+        $result = $image->drawRect(5, 5, 10, 10, Color::red(), fill: true, blend: true);
+        $this->assertSame(4, $result->bands());
+    }
+
+    public function testDrawRectBlendIsIdempotentWithOpaqueColor(): void
+    {
+        // Opaque colors should give the same result whether blend is on or off
+        // (on 4-band source, since alpha 255 means full replacement)
+        $image = Image::blank(20, 20, Color::white())->toRGBA();
+        $noBlend = $image->drawRect(5, 5, 10, 10, Color::red(), fill: true);
+        $withBlend = $image->drawRect(5, 5, 10, 10, Color::red(), fill: true, blend: true);
+        $this->assertSame(
+            array_map('intval', (array) $noBlend->vipsImage->getpoint(7, 7)),
+            array_map('intval', (array) $withBlend->vipsImage->getpoint(7, 7))
+        );
+    }
 }
