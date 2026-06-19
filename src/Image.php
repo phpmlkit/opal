@@ -587,6 +587,56 @@ final readonly class Image
         }
     }
 
+    /**
+     * Apply a mask image as the alpha channel of this image.
+     *
+     * The mask is converted to a single-band grayscale image where white pixels
+     * become fully opaque and black pixels become fully transparent in the result.
+     * If the source image already has an alpha channel it is replaced.
+     *
+     * Both images must have the same dimensions.
+     *
+     * @param self $mask Single-band grayscale mask image used as the alpha channel.
+     *                   White (255) = fully opaque, black (0) = fully transparent.
+     *
+     * @return self new Image instance with the mask applied as its alpha channel
+     *
+     * @throws \InvalidArgumentException if the mask does not have the same dimensions as the image
+     * @throws ImageException            if applying the mask fails
+     */
+    public function applyMask(self $mask): self
+    {
+        if ($this->width() !== $mask->width() || $this->height() !== $mask->height()) {
+            throw new \InvalidArgumentException(
+                \sprintf(
+                    'The mask dimensions (%dx%d) do not match the image dimensions (%dx%d).',
+                    $mask->width(),
+                    $mask->height(),
+                    $this->width(),
+                    $this->height(),
+                )
+            );
+        }
+
+        try {
+            // Convert mask to single-band grayscale and extract as a raw band
+            $maskBand = $mask->toGrayscale()->get(0);
+
+            // Get the image's color bands without any existing alpha
+            $bands = $this->split();
+            if ($this->hasAlpha()) {
+                array_pop($bands); // drop existing alpha
+            }
+
+            // Append mask as the new alpha channel and recombine
+            $bands[] = $maskBand;
+
+            return self::merge($bands);
+        } catch (\Exception $e) {
+            throw ImageException::wrap('Failed to apply mask', $e);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Resize
     // -------------------------------------------------------------------------

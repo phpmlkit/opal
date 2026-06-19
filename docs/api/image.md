@@ -548,6 +548,30 @@ public function unpremultiplyAlpha(): self
 
 **Throws:** `ImageException` if unpremultiplication fails.
 
+### applyMask()
+
+Apply a mask image as the alpha channel of this image.
+
+The mask is converted to a single-band grayscale image where white pixels become fully opaque and black pixels become
+fully transparent in the result. If the source image already has an alpha channel it is replaced.
+
+Both images must have the same dimensions.
+
+```php
+public function applyMask(self $mask): self
+```
+
+**Parameters:**
+
+| Parameter | Type   | Description                                                                                                           |
+|-----------|--------|-----------------------------------------------------------------------------------------------------------------------|
+| `$mask`   | `self` | Single-band grayscale mask image used as the alpha channel. White (255) = fully opaque, black (0) = fully transparent. |
+
+**Returns:** New Image instance with the mask applied as its alpha channel
+
+**Throws:** `\InvalidArgumentException` if the mask does not have the same dimensions as the image, `ImageException` if
+applying the mask fails.
+
 **Examples:**
 
 ```php
@@ -564,6 +588,10 @@ $opaque = $img->flattenAlpha(Color::white());
 $premul = $img->premultiplyAlpha();
 // ... compositing operations ...
 $unpremul = $premul->unpremultiplyAlpha();
+
+// Apply a grayscale mask as the alpha channel
+$mask = Image::fromFile('mask.png')->toGrayscale();
+$masked = $img->applyMask($mask);
 ```
 
 ---
