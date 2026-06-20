@@ -5,6 +5,14 @@ All notable changes to `phpmlkit/opal` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.1.1 - 2026-06-20
+
+### What's Changed
+
+* fix: include bundled fontconfig config in package distribution by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/7
+
+**Full Changelog**: https://github.com/phpmlkit/opal/compare/1.1.0...1.1.1
+
 ## v1.1.0 - 2026-06-20
 
 ### What's Changed
@@ -43,6 +51,7 @@ Opal is an alternative to GD and Imagick. It wraps libvips through PHP's FFI ext
 
 ```bash
 composer require phpmlkit/opal
+
 
 
 ```
