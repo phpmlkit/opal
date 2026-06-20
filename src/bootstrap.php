@@ -52,12 +52,14 @@ if (false !== $platformDirectory) {
     }
 }
 
-// On macOS, point fontconfig at the bundled config so libvips/harfbuzz
-// don't print a "Cannot load default config file" warning. Respect any
-// user-set FONTCONFIG_PATH.
-if (\PHP_OS_FAMILY === 'Darwin' && false === getenv('FONTCONFIG_PATH')) {
-    $bundledFontConfig = __DIR__.'/../etc/fonts';
-    if (is_dir($bundledFontConfig)) {
-        putenv('FONTCONFIG_PATH='.$bundledFontConfig);
+if (\PHP_OS_FAMILY === 'Darwin') {
+    if (false === getenv('PANGOCAIRO_BACKEND')) {
+        putenv('PANGOCAIRO_BACKEND=fontconfig');
+    }
+    if (false === getenv('FONTCONFIG_PATH')) {
+        $bundledFontConfig = __DIR__.'/../etc/fonts';
+        if (is_dir($bundledFontConfig)) {
+            putenv("FONTCONFIG_PATH={$bundledFontConfig}");
+        }
     }
 }
