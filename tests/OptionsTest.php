@@ -178,11 +178,54 @@ class OptionsTest extends TestCase
         $this->assertSame([], $vips);
     }
 
-    public function testTextOptionsWithFont(): void
+    public function testTextOptionsWithFontAndSize(): void
     {
         $options = TextOptions::default()->withFont('sans-serif')->withFontSize(24);
         $vips = $options->toVipsOptions();
         $this->assertSame('sans-serif 24', $vips['font']);
+    }
+
+    public function testTextOptionsWithFontSizeAloneUsesDefaultFamily(): void
+    {
+        $options = TextOptions::default()->withFontSize(48);
+        $vips = $options->toVipsOptions();
+        $this->assertSame(TextOptions::DEFAULT_FONT_FAMILY.' 48', $vips['font']);
+    }
+
+    public function testTextOptionsWithFontAloneUsesDefaultSize(): void
+    {
+        $options = TextOptions::default()->withFont('Helvetica');
+        $vips = $options->toVipsOptions();
+        $this->assertSame('Helvetica '.TextOptions::DEFAULT_FONT_SIZE, $vips['font']);
+    }
+
+    public function testTextOptionsWithFontAndFile(): void
+    {
+        $options = TextOptions::default()->withFont('Inter', '/path/to/font.ttf');
+        $vips = $options->toVipsOptions();
+        $this->assertSame('/path/to/font.ttf', $vips['fontfile']);
+        $this->assertSame('Inter '.TextOptions::DEFAULT_FONT_SIZE, $vips['font']);
+    }
+
+    public function testTextOptionsWithFontFileAndCustomSize(): void
+    {
+        $options = TextOptions::default()->withFont('Inter', '/path/to/font.ttf')->withFontSize(24);
+        $vips = $options->toVipsOptions();
+        $this->assertSame('/path/to/font.ttf', $vips['fontfile']);
+        $this->assertSame('Inter 24', $vips['font']);
+    }
+
+    public function testTextOptionsWithFontClearsPriorFile(): void
+    {
+        // Setting a file with one family, then changing to a different
+        // family without a file, should clear the file (file is tied to
+        // the family, not a separate setting).
+        $withFile = TextOptions::default()->withFont('Caveat', '/path/to/caveat.ttf');
+        $this->assertSame('/path/to/caveat.ttf', $withFile->fontFile);
+
+        $withoutFile = $withFile->withFont('Helvetica');
+        $this->assertSame('Helvetica', $withoutFile->fontFamily);
+        $this->assertNull($withoutFile->fontFile);
     }
 
     public function testTextOptionsWithWidth(): void
@@ -233,17 +276,11 @@ class OptionsTest extends TestCase
         $this->assertSame('word', $options->toVipsOptions()['wrap']);
     }
 
-    public function testTextOptionsWithFontfile(): void
-    {
-        $options = TextOptions::default()->withFontFile('/path/to/font.ttf');
-        $this->assertSame('/path/to/font.ttf', $options->toVipsOptions()['fontfile']);
-    }
-
     public function testTextOptionsImmutability(): void
     {
         $original = TextOptions::default();
         $modified = $original->withFont('Arial');
-        $this->assertNull($original->font);
-        $this->assertNotNull($modified->font);
+        $this->assertNull($original->fontFamily);
+        $this->assertSame('Arial', $modified->fontFamily);
     }
 }

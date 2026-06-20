@@ -88,10 +88,39 @@ class ImageCreateTest extends TestCase
 
     public function testTextWithWidth(): void
     {
-        $image = Image::text('A longer line of text to test wrapping', TextOptions::default()
+        $image = Image::text('A longer line of text for wrapping', TextOptions::default()
             ->withFontSize(16)
             ->withWidth(150));
         $this->assertLessThanOrEqual(150, $image->width());
+    }
+
+    public function testTextWithFontSizeScalesOutput(): void
+    {
+        $small = Image::text('Hello', TextOptions::default()->withFontSize(12));
+        $large = Image::text('Hello', TextOptions::default()->withFontSize(48));
+        $this->assertGreaterThan($small->width(), $large->width());
+        $this->assertGreaterThan($small->height(), $large->height());
+    }
+
+    public function testTextWithFontChangesRendering(): void
+    {
+        $caveat = Image::text('Hello', TextOptions::default()->withFont('Caveat')->withFontSize(48));
+        $helvetica = Image::text('Hello', TextOptions::default()->withFont('Helvetica')->withFontSize(48));
+        $this->assertNotSame(
+            [$caveat->width(), $caveat->height()],
+            [$helvetica->width(), $helvetica->height()],
+            'Different font families should produce different dimensions'
+        );
+    }
+
+    public function testTextWithFontFileMatchesFontFamily(): void
+    {
+        $caveat = Image::text('Hello', TextOptions::default()->withFont('Caveat')->withFontSize(48));
+        $caveatFile = Image::text('Hello', TextOptions::default()
+            ->withFont('Caveat', '/Users/Kyrian/Library/Fonts/Caveat-VariableFont_wght.ttf')
+            ->withFontSize(48));
+        $this->assertSame($caveat->width(), $caveatFile->width());
+        $this->assertSame($caveat->height(), $caveatFile->height());
     }
 
     // -------------------------------------------------------------------------
