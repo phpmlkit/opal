@@ -40,6 +40,7 @@ mkdir -p "${DIST_NAME}"
 dirs_to_include=(
     "src"
     "lib"
+    "etc"
     "scripts"
     "vendor"
 )
