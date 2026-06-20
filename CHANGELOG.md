@@ -5,6 +5,19 @@ All notable changes to `phpmlkit/opal` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.1.0 - 2026-06-20
+
+### What's Changed
+
+* feat: add applyMask method to Image by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/1
+* feat: add pixel-wise math operations by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/2
+* fix: match Color band count to image in all libvips call sites by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/3
+* fix: rewrite color space conversion to actually transform pixels by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/4
+* feat: add opt-in alpha blending to draw operations by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/5
+* feat: rewrite TextOptions font API around unified withFont method by @CodeWithKyrian in https://github.com/phpmlkit/opal/pull/6
+
+**Full Changelog**: https://github.com/phpmlkit/opal/compare/1.0.0...1.1.0
+
 ## v1.0.0 - 2026-05-23
 
 Initial release of **phpmlkit/opal** — a high-performance image processing library for PHP, built on libvips.
@@ -30,6 +43,7 @@ Opal is an alternative to GD and Imagick. It wraps libvips through PHP's FFI ext
 
 ```bash
 composer require phpmlkit/opal
+
 
 ```
 Requirements: PHP 8.2+, ext-ffi. The libvips binary is downloaded automatically.
