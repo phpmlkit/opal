@@ -216,6 +216,27 @@ class ImageCreateTest extends TestCase
         $this->assertSame(50, $thumb->height());
     }
 
+    public function testThumbnailPreservesAspectRatio(): void
+    {
+        $original = Image::blank(800, 400);
+        $path = $this->fixturesDir.'/test-thumbnail-aspect.png';
+        $original->toFile($path);
+        $thumb = Image::thumbnail($path, 200);
+        $this->assertSame(200, $thumb->width());
+        $this->assertSame(100, $thumb->height());
+    }
+
+    public function testThumbnailWithHeightFitsWithinBox(): void
+    {
+        $original = Image::blank(800, 400);
+        $path = $this->fixturesDir.'/test-thumbnail-height.png';
+        $original->toFile($path);
+        // Fit within 200x200 preserving aspect: width binds, height becomes 100.
+        $thumb = Image::thumbnail($path, 200, 200);
+        $this->assertSame(200, $thumb->width());
+        $this->assertSame(100, $thumb->height());
+    }
+
     public function testThumbnailNotFound(): void
     {
         $this->expectException(FileNotFoundException::class);

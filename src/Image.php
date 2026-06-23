@@ -273,7 +273,19 @@ final readonly class Image
                 $options['linear'] = true;
             }
 
-            return new self(VipsImage::thumbnail($filename, $width, $options));
+            // NOTE: we deliberately avoid `VipsImage::thumbnail($filename, ...)`.
+            //
+            // libvips' file-based thumbnail opens the source with *sequential*
+            // access. On libvips >= 8.16 the JPEG loader then forces the whole
+            // image into memory for Ultra-HDR gain-map detection on every internal
+            // open, which defeats shrink-on-load. For a 6000x4000 JPEG this makes
+            // the file-based path ~13x slower than necessary (and ~40x slower for
+            // PNG). Loading the image first (the default random-access path) and
+            // thumbnailing the in-memory image avoids that slow path while
+            // producing an equivalent thumbnail.
+            $loaded = VipsImage::newFromFile($filename);
+
+            return new self($loaded->thumbnail_image($width, $options));
         } catch (\Exception $e) {
             throw InvalidImageException::wrap("Failed to create thumbnail from file: {$filename}", $e);
         }
